@@ -10,7 +10,7 @@ int main( int argc, char **argv )
 
     int c;
     Option opt;
-    while ( (c=getopt(argc,argv,"q:Q:s:S:N:f:e:g:x:t:o:cdvh")) != -1 ) {
+    while ( (c=getopt(argc,argv,"q:Q:s:S:N:f:e:g:x:t:o:C:cdvh")) != -1 ) {
         switch (c) {
             case 'q': opt.baseQuaCutoff = atoi(optarg);               break;
             case 'Q': opt.mapQuaCutoff  = atoi(optarg);               break;
@@ -28,6 +28,7 @@ int main( int argc, char **argv )
             case 't': opt.minSupOnHaplotype = atoi(optarg);           break;
             case 'o': opt.outBamFile = optarg;                        break;
             case 'c': opt.filtSoftClip = true;                        break;
+            case 'C': opt.softEndTrim = atoi(optarg);                 break;
 
             case 'd': opt.debug = true;                                   break;
             case 'v': cerr << VERSION << endl;                        exit(1);

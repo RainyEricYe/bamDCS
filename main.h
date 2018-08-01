@@ -51,7 +51,8 @@ class Option {
             outBamFile(""),
             debug(false),
             pvalue(0.001),
-            pcrError(1.0e-5) {}
+            pcrError(1.0e-5),
+            softEndTrim(5) {}
 
         ~Option(){}
 
@@ -72,6 +73,7 @@ class Option {
         bool debug;
         double pvalue;
         double pcrError;
+        ulong softEndTrim;
 };
 
 typedef map<string, vector<SeqLib::BamRecord> > mStrBrV;
@@ -120,6 +122,7 @@ pDoubleCharSet maxLogLikelihood(const string &, const vector<double> &, const ve
 double minus_llh_3nt( int m, double x[], const vector<pCharUlong> &v, const string &s, const vector<double> &e,  double lower[], double upper[], double sumBound );
 double calculate_llh(const string &, const vector<double> &, mCharDouble &);
 string ignoreError(const string &, const vector< mCharDouble > &);
+SeqLib::Cigar trimCigar(const SeqLib::Cigar &cg, const Option &opt);
 
 // sub functions
 
@@ -145,6 +148,7 @@ void usage() {
         "    -x [i]     Encoding offset for phred quality scores [33]\n"
         "    -t [i]     min support num to construct a haplotype seq [3]\n"
         "    -c         discard soft-clipping reads [false]\n"
+        "    -C [i]     soft trim N base from both ends of read [5]\n"
 
         "    -o [s]     output bam File directly []\n"
         "    -d         debug mode [false]\n"
@@ -320,6 +324,10 @@ void printConsensusRead(
 
 //            br1.SetQname( chrBegEnd + ":" + cg );
 //            br2.SetQname( chrBegEnd + ":" + cg );
+            if ( opt.softEndTrim > 0 ) {
+                br1.SetCigar( trimCigar(br1.GetCigar(), opt) );
+                br2.SetCigar( trimCigar(br2.GetCigar(), opt) );
+            }
 
             br1.SetSequence( rd1 );
             br2.SetSequence( seq.substr(length) );
@@ -937,6 +945,89 @@ string adjust_p(const string &qs, const Option &opt)
     else {
         return qs;
     }
+}
+
+SeqLib::Cigar trimCigar(const SeqLib::Cigar &cg, const Option &opt)
+{
+    CigarField sc('S', opt.softEndTrim );
+    Cigar nc;
+
+    if ( cg.size() == 0 ) {
+        return cg;
+    }
+    if ( cg.size() == 1 ) {
+        if ( cg.front().Type() == 'M' ) {
+            nc.add(sc);
+            CigarField md('M', cg.front().Length() - 2 * opt.softEndTrim );
+            nc.add(md);
+            nc.add(sc);
+        }
+        else {
+            cerr << "bad cigar: " << cg << endl;
+            exit(1);
+        }
+    }
+    else if ( cg.size() == 2 ) {
+        if ( cg.front().Type() == 'S' ) {
+            if ( cg.front().Length() >= opt.softEndTrim ) {
+                nc.add( cg.front() );
+                CigarField md('M', cg.back().Length() - opt.softEndTrim );
+                nc.add(md);
+                nc.add(sc);
+            }
+            else {
+                nc.add( sc );
+                CigarField md('M', cg.back().Length() - opt.softEndTrim*2 + cg.front().Length() );
+                nc.add(md);
+                nc.add(sc);
+            }
+        }
+        else { // M
+            if ( cg.back().Length() >= opt.softEndTrim ) {
+                nc.add(sc);
+                CigarField md('M', cg.back().Length() - opt.softEndTrim );
+                nc.add(md);
+                nc.add( cg.back() );
+            }
+            else {
+                nc.add(sc);
+                CigarField md('M', cg.front().Length() - opt.softEndTrim*2 + cg.back().Length() );
+                nc.add(md);
+                nc.add(sc);
+            }
+        }
+    }
+    else {
+        return cg;
+    }
+
+    return nc;
+
+    /*
+    for ( vector<CigarField>::const_iterator it = cg.begin(); it != cg.end(); it++ ) { 
+        char t = it->Type();
+        size_t n = it->Length();
+
+        switch (t) {
+            case '=':
+            case 'X':
+            case 'M':
+                break;
+            case 'I':
+                break;
+            case 'S':
+                break;
+
+            case 'N':
+            case 'D':       pos += n;  break;
+            case 'H':
+            case 'P':                  break;
+
+            default:  cerr << "unknown cigar field: " << cg << endl, exit(1);
+        }
+    }
+*/
+
 }
 
 #endif // MAIN_H_
