@@ -121,7 +121,9 @@ pDoubleCharSet maxLogLikelihood(const string &, const vector<double> &, const ve
 double minus_llh_3nt( int m, double x[], const vector<pCharUlong> &v, const string &s, const vector<double> &e,  double lower[], double upper[], double sumBound );
 double calculate_llh(const string &, const vector<double> &, mCharDouble &);
 string ignoreError(const string &, const vector< mCharDouble > &);
-SeqLib::Cigar trimCigar(SeqLib::BamRecord &br, const SeqLib::Cigar &cg, const Option &opt);
+void trimEnd(SeqLib::BamRecord &br, const Option &opt);
+//SeqLib::Cigar trimCigar(SeqLib::BamRecord &br, const SeqLib::Cigar &cg, const Option &opt);
+size_t getGenomePosition(size_t pos, ulong i, const Cigar &cg);
 
 // sub functions
 
@@ -324,8 +326,10 @@ void printConsensusRead(
 //            br1.SetQname( chrBegEnd + ":" + cg );
 //            br2.SetQname( chrBegEnd + ":" + cg );
             if ( opt.softEndTrim > 0 ) {
-                br1.SetCigar( trimCigar(br1, br1.GetCigar(), opt) );
-                br2.SetCigar( trimCigar(br2, br2.GetCigar(), opt) );
+     //           br1.SetCigar( trimCigar(br1, br1.GetCigar(), opt) );
+       //         br2.SetCigar( trimCigar(br2, br2.GetCigar(), opt) );
+                trimEnd(br1, opt);
+                trimEnd(br2, opt);
             }
 
             br1.SetSequence( rd1 );
@@ -945,6 +949,89 @@ string adjust_p(const string &qs, const Option &opt)
         return qs;
     }
 }
+
+void trimEnd(SeqLib::BamRecord &br, const Option &opt)
+{
+    CigarField sc('S', opt.softEndTrim );
+    Cigar cg = br.GetCigar();
+
+    if ( cg.size() == 0 ) {
+        return;
+    }
+
+    size_t head(0), tail(0);
+    string ty("=XMIS");
+
+    //trim head
+    Cigar nc;
+
+    cerr << "old: " << cg << ' ';
+
+    for (size_t i(0); i != cg.size(); i++ ) {
+        if ( ty.find( cg[i].Type() ) != string::npos ) {
+            head += cg[i].Length();
+        }
+
+        cerr << head << "h ";
+
+        if ( head >= opt.softEndTrim ) {
+            nc.add(sc);
+            br.SetPosition( getGenomePosition(br.Position(), opt.softEndTrim, cg) );
+
+            size_t remain = head - opt.softEndTrim;
+            if ( remain > 0 ) {
+                CigarField tmp(cg[i].Type(), remain);
+                nc.add(tmp);
+
+                for (size_t j(i+1); j != cg.size(); j++) nc.add(cg[j]);
+            }
+            else {
+                for (size_t j(i+1); j != cg.size(); j++) nc.add(cg[j]);
+            }
+            cerr << "newR: " << nc << ' ';
+
+            break;
+        }
+    }
+
+    //trim tail
+    Cigar rc;
+
+    for ( int i( nc.size()-1 ); i >= 0; i-- ) {
+        if ( ty.find( nc[i].Type() ) != string::npos ) {
+            tail += nc[i].Length();
+        }
+
+        if ( tail >= opt.softEndTrim ) {
+            rc.add(sc);
+
+            int remain = tail - opt.softEndTrim;
+            if ( remain > 0 ) {
+                CigarField tmp(nc[i].Type(), remain);
+                rc.add(tmp);
+                for (int j(i-1); j >= 0; j--) rc.add(nc[j]);
+            }
+            else {
+                for (int j(i-1); j >= 0; j--) rc.add(nc[j]);
+            }
+            cerr << " new: " << rc << ' ';
+
+            break;
+        }
+    }
+
+    // reverse
+    Cigar rev;
+
+    for ( int i( rc.size()-1 ); i >= 0; i-- ) {
+        rev.add( rc[i] );
+    }
+    cerr << " final: " << rev << endl;
+
+    br.SetCigar( rev );
+
+}
+/*
 SeqLib::Cigar trimCigar(SeqLib::BamRecord &br, const SeqLib::Cigar &cg, const Option &opt)
 {
     CigarField sc('S', opt.softEndTrim );
@@ -1001,17 +1088,52 @@ SeqLib::Cigar trimCigar(SeqLib::BamRecord &br, const SeqLib::Cigar &cg, const Op
                 nc.add(md);
                 nc.add(sc);
             }
-        }
-        else {
+            }
+            else {
             return cg;
-        }
-    }
-    else {
-        return cg;
-    }
+            }
+            }
+            else {
+            return cg;
+            }
 
 //    cout << br.Position() << endl;
 
-    return nc;
+return nc;
 }
+ */
+size_t getGenomePosition(size_t pos, ulong i, const Cigar &cg)
+{
+    for ( vector<CigarField>::const_iterator it = cg.begin(); it != cg.end(); it++ ) { 
+        char t = it->Type();
+        size_t n = it->Length();
+
+        switch (t) {
+            case '=':
+            case 'X':
+            case 'M':
+                if (i < n)  return (pos+i);
+                else        (pos+=n, i-=n);
+                break;
+            case 'I':
+                if (i < n)  return pos;
+                else        (i -= n); 
+                break;
+            case 'S':
+                if (i < n)  return -1; 
+                else        i -= n;
+                break;
+
+            case 'N':
+            case 'D':       pos += n;  break;
+            case 'H':
+            case 'P':                  break;
+
+            default:  cerr << "unknown cigar field: " << cg << endl, exit(1);
+        }   
+    }   
+
+    return pos + i;
+}
+
 #endif // MAIN_H_
