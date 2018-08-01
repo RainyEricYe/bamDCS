@@ -972,11 +972,15 @@ void trimEnd(SeqLib::BamRecord &br, const Option &opt)
             head += cg[i].Length();
         }
 
-        cerr << head << "h ";
+        cerr << head << "h " << endl;
 
         if ( head >= opt.softEndTrim ) {
             nc.add(sc);
+            cerr << br.Position() <<  ' ';
+
             br.SetPosition( getGenomePosition(br.Position(), opt.softEndTrim, cg) );
+
+            cerr << br.Position() << endl;
 
             size_t remain = head - opt.softEndTrim;
             if ( remain > 0 ) {
@@ -1026,6 +1030,11 @@ void trimEnd(SeqLib::BamRecord &br, const Option &opt)
     for ( int i( rc.size()-1 ); i >= 0; i-- ) {
         rev.add( rc[i] );
     }
+
+    if ( rev[1].Type() == 'D' ) {
+        br.SetPosition( br.Position() - rev[1].Length() );
+    }
+
     cerr << " final: " << rev << endl;
 
     br.SetCigar( rev );
