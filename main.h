@@ -112,7 +112,6 @@ vector< mCharDouble > hetPoint(const BamRecordVector &, const Option &);
 
 //vCharSet zipHetPoint(const vCharSet &, const vCharSet &);
 vector< mCharDouble > zipHetPoint(const vector< mCharDouble > &, const vector< mCharDouble > &, const Option &opt);
-
 vString consensusSeq(const BamRecordVector &, const BamRecordVector &, const vector< mCharDouble > &, const Option &);
 
 //set<char> llh_genotype(const string &, const string &, const Option &);
@@ -122,7 +121,7 @@ pDoubleCharSet maxLogLikelihood(const string &, const vector<double> &, const ve
 double minus_llh_3nt( int m, double x[], const vector<pCharUlong> &v, const string &s, const vector<double> &e,  double lower[], double upper[], double sumBound );
 double calculate_llh(const string &, const vector<double> &, mCharDouble &);
 string ignoreError(const string &, const vector< mCharDouble > &);
-SeqLib::Cigar trimCigar(const SeqLib::Cigar &cg, const Option &opt);
+//SeqLib::Cigar trimCigar(const SeqLib::Cigar &cg, const Option &opt);
 
 // sub functions
 
@@ -324,10 +323,10 @@ void printConsensusRead(
 
 //            br1.SetQname( chrBegEnd + ":" + cg );
 //            br2.SetQname( chrBegEnd + ":" + cg );
-            if ( opt.softEndTrim > 0 ) {
-                br1.SetCigar( trimCigar(br1.GetCigar(), opt) );
-                br2.SetCigar( trimCigar(br2.GetCigar(), opt) );
-            }
+     //       if ( opt.softEndTrim > 0 ) {
+       //         br1.SetCigar( trimCigar(br1.GetCigar(), opt) );
+         //       br2.SetCigar( trimCigar(br2.GetCigar(), opt) );
+          //  }
 
             br1.SetSequence( rd1 );
             br2.SetSequence( seq.substr(length) );
@@ -946,7 +945,7 @@ string adjust_p(const string &qs, const Option &opt)
         return qs;
     }
 }
-
+/*
 SeqLib::Cigar trimCigar(const SeqLib::Cigar &cg, const Option &opt)
 {
     CigarField sc('S', opt.softEndTrim );
@@ -1003,31 +1002,5 @@ SeqLib::Cigar trimCigar(const SeqLib::Cigar &cg, const Option &opt)
 
     return nc;
 
-    /*
-    for ( vector<CigarField>::const_iterator it = cg.begin(); it != cg.end(); it++ ) { 
-        char t = it->Type();
-        size_t n = it->Length();
-
-        switch (t) {
-            case '=':
-            case 'X':
-            case 'M':
-                break;
-            case 'I':
-                break;
-            case 'S':
-                break;
-
-            case 'N':
-            case 'D':       pos += n;  break;
-            case 'H':
-            case 'P':                  break;
-
-            default:  cerr << "unknown cigar field: " << cg << endl, exit(1);
-        }
-    }
 */
-
-}
-
 #endif // MAIN_H_
