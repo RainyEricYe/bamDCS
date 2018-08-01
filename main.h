@@ -325,7 +325,7 @@ void printConsensusRead(
 //            br2.SetQname( chrBegEnd + ":" + cg );
             if ( opt.softEndTrim > 0 ) {
                 br1.SetCigar( trimCigar(br1, br1.GetCigar(), opt) );
-                br2.SetCigar( trimCigar(br1, br2.GetCigar(), opt) );
+                br2.SetCigar( trimCigar(br2, br2.GetCigar(), opt) );
             }
 
             br1.SetSequence( rd1 );
@@ -954,6 +954,8 @@ SeqLib::Cigar trimCigar(SeqLib::BamRecord &br, const SeqLib::Cigar &cg, const Op
         return cg;
     }
     if ( cg.size() == 1 ) {
+    //    cout << br.Position() << ' ' << opt.softEndTrim << ' ';
+
         if ( cg.front().Type() == 'M' ) {
             nc.add(sc);
             CigarField md('M', cg.front().Length() - 2 * opt.softEndTrim );
@@ -967,7 +969,9 @@ SeqLib::Cigar trimCigar(SeqLib::BamRecord &br, const SeqLib::Cigar &cg, const Op
         }
     }
     else if ( cg.size() == 2 ) {
-        if ( cg.front().Type() == 'S' ) {
+  //      cout << br.Position() << ' ' << opt.softEndTrim << ' ';
+
+        if ( cg.front().Type() == 'S' && cg.back().Type() == 'M' ) {
             if ( cg.front().Length() >= opt.softEndTrim ) {
                 nc.add( cg.front() );
                 CigarField md('M', cg.back().Length() - opt.softEndTrim );
@@ -982,7 +986,7 @@ SeqLib::Cigar trimCigar(SeqLib::BamRecord &br, const SeqLib::Cigar &cg, const Op
                 nc.add(sc);
             }
         }
-        else { // M
+        else if ( cg.front().Type() == 'M' && cg.back().Type() == 'S' ) {
             if ( cg.back().Length() >= opt.softEndTrim ) {
                 nc.add(sc);
                 CigarField md('M', cg.back().Length() - opt.softEndTrim );
@@ -998,10 +1002,15 @@ SeqLib::Cigar trimCigar(SeqLib::BamRecord &br, const SeqLib::Cigar &cg, const Op
                 nc.add(sc);
             }
         }
+        else {
+            return cg;
+        }
     }
     else {
         return cg;
     }
+
+//    cout << br.Position() << endl;
 
     return nc;
 }
