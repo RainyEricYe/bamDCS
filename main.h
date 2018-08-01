@@ -965,22 +965,22 @@ void trimEnd(SeqLib::BamRecord &br, const Option &opt)
     //trim head
     Cigar nc;
 
-    cerr << "old: " << cg << ' ';
+    //cerr << "old: " << cg << ' ';
 
     for (size_t i(0); i != cg.size(); i++ ) {
         if ( ty.find( cg[i].Type() ) != string::npos ) {
             head += cg[i].Length();
         }
 
-        cerr << head << "h " << endl;
+        //cerr << head << "h " << endl;
 
         if ( head >= opt.softEndTrim ) {
             nc.add(sc);
-            cerr << br.Position() <<  ' ';
+            //cerr << br.Position() <<  ' ';
 
             br.SetPosition( getGenomePosition(br.Position(), opt.softEndTrim, cg) );
 
-            cerr << br.Position() << endl;
+            //cerr << br.Position() << endl;
 
             size_t remain = head - opt.softEndTrim;
             if ( remain > 0 ) {
@@ -992,7 +992,7 @@ void trimEnd(SeqLib::BamRecord &br, const Option &opt)
             else {
                 for (size_t j(i+1); j != cg.size(); j++) nc.add(cg[j]);
             }
-            cerr << "newR: " << nc << ' ';
+            //cerr << "newR: " << nc << ' ';
 
             break;
         }
@@ -1018,7 +1018,7 @@ void trimEnd(SeqLib::BamRecord &br, const Option &opt)
             else {
                 for (int j(i-1); j >= 0; j--) rc.add(nc[j]);
             }
-            cerr << " new: " << rc << ' ';
+            //cerr << " new: " << rc << ' ';
 
             break;
         }
@@ -1035,7 +1035,7 @@ void trimEnd(SeqLib::BamRecord &br, const Option &opt)
         br.SetPosition( br.Position() - rev[1].Length() );
     }
 
-    cerr << " final: " << rev << endl;
+    //cerr << " final: " << rev << endl;
 
     br.SetCigar( rev );
 
