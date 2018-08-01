@@ -121,7 +121,7 @@ pDoubleCharSet maxLogLikelihood(const string &, const vector<double> &, const ve
 double minus_llh_3nt( int m, double x[], const vector<pCharUlong> &v, const string &s, const vector<double> &e,  double lower[], double upper[], double sumBound );
 double calculate_llh(const string &, const vector<double> &, mCharDouble &);
 string ignoreError(const string &, const vector< mCharDouble > &);
-//SeqLib::Cigar trimCigar(const SeqLib::Cigar &cg, const Option &opt);
+SeqLib::Cigar trimCigar(SeqLib::BamRecord &br, const SeqLib::Cigar &cg, const Option &opt);
 
 // sub functions
 
@@ -323,10 +323,10 @@ void printConsensusRead(
 
 //            br1.SetQname( chrBegEnd + ":" + cg );
 //            br2.SetQname( chrBegEnd + ":" + cg );
-     //       if ( opt.softEndTrim > 0 ) {
-       //         br1.SetCigar( trimCigar(br1.GetCigar(), opt) );
-         //       br2.SetCigar( trimCigar(br2.GetCigar(), opt) );
-          //  }
+            if ( opt.softEndTrim > 0 ) {
+                br1.SetCigar( trimCigar(br1, br1.GetCigar(), opt) );
+                br2.SetCigar( trimCigar(br1, br2.GetCigar(), opt) );
+            }
 
             br1.SetSequence( rd1 );
             br2.SetSequence( seq.substr(length) );
@@ -945,8 +945,7 @@ string adjust_p(const string &qs, const Option &opt)
         return qs;
     }
 }
-/*
-SeqLib::Cigar trimCigar(const SeqLib::Cigar &cg, const Option &opt)
+SeqLib::Cigar trimCigar(SeqLib::BamRecord &br, const SeqLib::Cigar &cg, const Option &opt)
 {
     CigarField sc('S', opt.softEndTrim );
     Cigar nc;
@@ -958,6 +957,7 @@ SeqLib::Cigar trimCigar(const SeqLib::Cigar &cg, const Option &opt)
         if ( cg.front().Type() == 'M' ) {
             nc.add(sc);
             CigarField md('M', cg.front().Length() - 2 * opt.softEndTrim );
+            br.SetPosition( br.Position() + opt.softEndTrim );
             nc.add(md);
             nc.add(sc);
         }
@@ -977,6 +977,7 @@ SeqLib::Cigar trimCigar(const SeqLib::Cigar &cg, const Option &opt)
             else {
                 nc.add( sc );
                 CigarField md('M', cg.back().Length() - opt.softEndTrim*2 + cg.front().Length() );
+                br.SetPosition( br.Position() + opt.softEndTrim - cg.front().Length() );
                 nc.add(md);
                 nc.add(sc);
             }
@@ -985,12 +986,14 @@ SeqLib::Cigar trimCigar(const SeqLib::Cigar &cg, const Option &opt)
             if ( cg.back().Length() >= opt.softEndTrim ) {
                 nc.add(sc);
                 CigarField md('M', cg.back().Length() - opt.softEndTrim );
+                br.SetPosition( br.Position() + opt.softEndTrim );
                 nc.add(md);
                 nc.add( cg.back() );
             }
             else {
                 nc.add(sc);
                 CigarField md('M', cg.front().Length() - opt.softEndTrim*2 + cg.back().Length() );
+                br.SetPosition( br.Position() + opt.softEndTrim );
                 nc.add(md);
                 nc.add(sc);
             }
@@ -1001,6 +1004,5 @@ SeqLib::Cigar trimCigar(const SeqLib::Cigar &cg, const Option &opt)
     }
 
     return nc;
-
-*/
+}
 #endif // MAIN_H_
