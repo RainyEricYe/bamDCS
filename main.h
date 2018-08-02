@@ -465,6 +465,7 @@ mCharDouble llh_genotype(const string &s, const string &q, const Option &opt)
 
     // check frequent of alleles
     mCharUlong fr;
+
     double depth( s.size() );
     double small_diff(1e-10);
 
