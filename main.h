@@ -737,7 +737,7 @@ pDoubleCharSet maxLogLikelihood(const string &s, const vector<double> &e, const 
         // future plan
 
         double delta(0.01);
-        double delta_tol(0.00001);
+        double delta_tol(1e-8);
         double fx;
         int k;
         int k_max(20000);
