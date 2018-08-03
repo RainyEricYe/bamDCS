@@ -1041,77 +1041,7 @@ void trimEnd(SeqLib::BamRecord &br, const Option &opt)
     br.SetCigar( rev );
 
 }
-/*
-SeqLib::Cigar trimCigar(SeqLib::BamRecord &br, const SeqLib::Cigar &cg, const Option &opt)
-{
-    CigarField sc('S', opt.softEndTrim );
-    Cigar nc;
 
-    if ( cg.size() == 0 ) {
-        return cg;
-    }
-    if ( cg.size() == 1 ) {
-    //    cout << br.Position() << ' ' << opt.softEndTrim << ' ';
-
-        if ( cg.front().Type() == 'M' ) {
-            nc.add(sc);
-            CigarField md('M', cg.front().Length() - 2 * opt.softEndTrim );
-            br.SetPosition( br.Position() + opt.softEndTrim );
-            nc.add(md);
-            nc.add(sc);
-        }
-        else {
-            cerr << "bad cigar: " << cg << endl;
-            exit(1);
-        }
-    }
-    else if ( cg.size() == 2 ) {
-  //      cout << br.Position() << ' ' << opt.softEndTrim << ' ';
-
-        if ( cg.front().Type() == 'S' && cg.back().Type() == 'M' ) {
-            if ( cg.front().Length() >= opt.softEndTrim ) {
-                nc.add( cg.front() );
-                CigarField md('M', cg.back().Length() - opt.softEndTrim );
-                nc.add(md);
-                nc.add(sc);
-            }
-            else {
-                nc.add( sc );
-                CigarField md('M', cg.back().Length() - opt.softEndTrim*2 + cg.front().Length() );
-                br.SetPosition( br.Position() + opt.softEndTrim - cg.front().Length() );
-                nc.add(md);
-                nc.add(sc);
-            }
-        }
-        else if ( cg.front().Type() == 'M' && cg.back().Type() == 'S' ) {
-            if ( cg.back().Length() >= opt.softEndTrim ) {
-                nc.add(sc);
-                CigarField md('M', cg.back().Length() - opt.softEndTrim );
-                br.SetPosition( br.Position() + opt.softEndTrim );
-                nc.add(md);
-                nc.add( cg.back() );
-            }
-            else {
-                nc.add(sc);
-                CigarField md('M', cg.front().Length() - opt.softEndTrim*2 + cg.back().Length() );
-                br.SetPosition( br.Position() + opt.softEndTrim );
-                nc.add(md);
-                nc.add(sc);
-            }
-            }
-            else {
-            return cg;
-            }
-            }
-            else {
-            return cg;
-            }
-
-//    cout << br.Position() << endl;
-
-return nc;
-}
- */
 size_t getGenomePosition(size_t pos, ulong i, const Cigar &cg)
 {
     for ( vector<CigarField>::const_iterator it = cg.begin(); it != cg.end(); it++ ) { 
@@ -1140,8 +1070,8 @@ size_t getGenomePosition(size_t pos, ulong i, const Cigar &cg)
             case 'P':                  break;
 
             default:  cerr << "unknown cigar field: " << cg << endl, exit(1);
-        }   
-    }   
+        }
+    }
 
     return pos + i;
 }
