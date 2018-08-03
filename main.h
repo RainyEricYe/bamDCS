@@ -966,7 +966,7 @@ void trimEnd(SeqLib::BamRecord &br, const Option &opt)
     //trim head
     Cigar nc;
 
-    //cerr << "old: " << cg << ' ';
+    cerr << "old: " << cg << ' ' << br.Position() << ' ';
 
     for (size_t i(0); i != cg.size(); i++ ) {
         if ( ty.find( cg[i].Type() ) != string::npos ) {
@@ -1019,27 +1019,92 @@ void trimEnd(SeqLib::BamRecord &br, const Option &opt)
             else {
                 for (int j(i-1); j >= 0; j--) rc.add(nc[j]);
             }
-            //cerr << " new: " << rc << ' ';
 
             break;
         }
     }
 
+    cerr << " new: " << rc << ' ' << br.Position() << ' ';
+
+    // deal with I D M near head & tail
+
+    vector<CigarField> vrc;
+    if ( rc[1].Type() == 'I' ) { // combine I & S
+        CigarField tf('S', rc[0].Length() + rc[1].Length() );
+        vrc.push_back(tf);
+        for ( size_t i(2); i < rc.size(); i++ ) vrc.push_back( rc[i] );
+    }
+    else if ( rc[1].Type() == 'D' || rc[2].Type() == 'N' ) { // skip D
+        vrc.push_back( rc[0] );
+        for ( size_t i(2); i < rc.size(); i++ ) vrc.push_back( rc[i] );
+    }
+    else if ( rc[1].Type() == 'M' && rc[1].Length() <= 5 ) { // short M near end
+        if ( rc[2].Type() == 'I' ) {
+            CigarField tf('S', rc[0].Length() + rc[1].Length() + rc[2].Length() );
+            vrc.push_back(tf);
+            for ( size_t i(3); i < rc.size(); i++ ) vrc.push_back( rc[i] );
+        }
+        else if ( rc[2].Type() == 'D' || rc[2].Type() == 'N' ) {
+            CigarField tf('S', rc[0].Length() + rc[1].Length() );
+            vrc.push_back(tf);
+            for ( size_t i(3); i < rc.size(); i++ ) vrc.push_back( rc[i] );
+        }
+        else {
+            for ( auto &p : rc ) vrc.push_back(p);
+        }
+    }
+    else {
+        for ( auto &p : rc ) vrc.push_back(p);
+    }
+
+    reverse( vrc.begin(), vrc.end() );
+
+    // reverse vrc
+    vector<CigarField> rv;
+    if ( vrc[1].Type() == 'I' ) { // combine I & S
+        CigarField tf('S', vrc[0].Length() + vrc[1].Length() );
+        rv.push_back(tf);
+        for ( size_t i(2); i < vrc.size(); i++ ) rv.push_back( vrc[i] );
+    }
+    else if ( vrc[1].Type() == 'D' || vrc[2].Type() == 'N' ) { // skip D
+        br.SetPosition( br.Position() - vrc[1].Length() );
+
+        rv.push_back( vrc[0] );
+        for ( size_t i(2); i < vrc.size(); i++ ) rv.push_back( vrc[i] );
+    }
+    else if ( vrc[1].Type() == 'M' && vrc[1].Length() <= 5 ) { // short M near end
+        if ( vrc[2].Type() == 'I' ) {
+            br.SetPosition( br.Position() + vrc[1].Length() );
+
+            CigarField tf('S', vrc[0].Length() + vrc[1].Length() + vrc[2].Length() );
+            rv.push_back(tf);
+            for ( size_t i(3); i < vrc.size(); i++ ) rv.push_back( vrc[i] );
+        }
+        else if ( vrc[2].Type() == 'D' || vrc[2].Type() == 'N' ) {
+            br.SetPosition( br.Position() + vrc[1].Length() );
+
+            CigarField tf('S', vrc[0].Length() + vrc[1].Length() );
+            rv.push_back(tf);
+            for ( size_t i(3); i < vrc.size(); i++ ) rv.push_back( vrc[i] );
+        }
+        else {
+            for ( auto &p : vrc ) rv.push_back(p);
+        }
+    }
+    else {
+        for ( auto &p : vrc ) rv.push_back(p);
+    }
+
     // reverse
     Cigar rev;
 
-    for ( int i( rc.size()-1 ); i >= 0; i-- ) {
-        rev.add( rc[i] );
+    for ( auto & p : rv ) {
+        rev.add( p );
     }
 
-    if ( rev[1].Type() == 'D' ) {
-        br.SetPosition( br.Position() - rev[1].Length() );
-    }
-
-    //cerr << " final: " << rev << endl;
+    cerr << " final: " << rev << ' ' << br.Position() << endl;
 
     br.SetCigar( rev );
-
 }
 
 size_t getGenomePosition(size_t pos, ulong i, const Cigar &cg)
