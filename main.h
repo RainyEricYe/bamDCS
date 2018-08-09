@@ -947,7 +947,7 @@ void trimEnd(SeqLib::BamRecord &br, const Option &opt)
     //trim head
     Cigar nc;
 
-    cerr << "old: " << cg << ' ' << br.Position() << ' ';
+    //cerr << "old: " << cg << ' ' << br.Position() << ' ';
 
     for (size_t i(0); i != cg.size(); i++ ) {
         if ( ty.find( cg[i].Type() ) != string::npos ) {
@@ -996,7 +996,7 @@ void trimEnd(SeqLib::BamRecord &br, const Option &opt)
         }
     }
 
-    cerr << " new: " << rc << ' ' << br.Position() << ' ';
+    //cerr << " new: " << rc << ' ' << br.Position() << ' ';
 
     // deal with I D M near head & tail
 
@@ -1076,7 +1076,7 @@ void trimEnd(SeqLib::BamRecord &br, const Option &opt)
 
     br.SetPosition( getGenomePosition(br.Position(), rev_S_length, cg) );
 
-    cerr << " final: " << rev << ' ' << br.Position() << endl;
+    //cerr << " final: " << rev << ' ' << br.Position() << endl;
 
     br.SetCigar( rev );
 }
