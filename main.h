@@ -954,16 +954,8 @@ void trimEnd(SeqLib::BamRecord &br, const Option &opt)
             head += cg[i].Length();
         }
 
-        //cerr << head << "h " << endl;
-
         if ( head >= opt.softEndTrim ) {
             nc.add(sc);
-            //cerr << br.Position() <<  ' ';
-
-            br.SetPosition( getGenomePosition(br.Position(), opt.softEndTrim, cg) );
-
-            //cerr << br.Position() << endl;
-
             size_t remain = head - opt.softEndTrim;
             if ( remain > 0 ) {
                 CigarField tmp(cg[i].Type(), remain);
@@ -974,7 +966,6 @@ void trimEnd(SeqLib::BamRecord &br, const Option &opt)
             else {
                 for (size_t j(i+1); j != cg.size(); j++) nc.add(cg[j]);
             }
-            //cerr << "newR: " << nc << ' ';
 
             break;
         }
@@ -1048,21 +1039,18 @@ void trimEnd(SeqLib::BamRecord &br, const Option &opt)
         for ( size_t i(2); i < vrc.size(); i++ ) rv.push_back( vrc[i] );
     }
     else if ( vrc[1].Type() == 'D' || vrc[2].Type() == 'N' ) { // skip D
-        br.SetPosition( br.Position() - vrc[1].Length() );
 
         rv.push_back( vrc[0] );
         for ( size_t i(2); i < vrc.size(); i++ ) rv.push_back( vrc[i] );
     }
     else if ( vrc[1].Type() == 'M' && vrc[1].Length() <= 5 ) { // short M near end
         if ( vrc[2].Type() == 'I' ) {
-            br.SetPosition( br.Position() + vrc[1].Length() );
 
             CigarField tf('S', vrc[0].Length() + vrc[1].Length() + vrc[2].Length() );
             rv.push_back(tf);
             for ( size_t i(3); i < vrc.size(); i++ ) rv.push_back( vrc[i] );
         }
         else if ( vrc[2].Type() == 'D' || vrc[2].Type() == 'N' ) {
-            br.SetPosition( br.Position() + vrc[1].Length() );
 
             CigarField tf('S', vrc[0].Length() + vrc[1].Length() );
             rv.push_back(tf);
@@ -1082,6 +1070,11 @@ void trimEnd(SeqLib::BamRecord &br, const Option &opt)
     for ( auto & p : rv ) {
         rev.add( p );
     }
+
+    // set new start position of reads
+    size_t cg_S_length = ( cg[0].Type() == 'S' ? cg[0].Length() : 0 );
+    size_t rev_S_length = ( rev[0].Type() == 'S' ? rev[0].Length() : 0 );
+    br.SetPosition(br.Position() + rev_S_length - cg_S_length );
 
     cerr << " final: " << rev << ' ' << br.Position() << endl;
 
