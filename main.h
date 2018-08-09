@@ -44,7 +44,7 @@ class Option {
             Ncutoff(0.1),
             minFractionInFam(0.002),
             freqPrecision(0.00001),
-            lhrGapCutoff(5.0),
+            lhrGapCutoff(2.0),
             phredOffset(33),
             minSupOnHaplotype(3),
             filtSoftClip(false),
@@ -145,7 +145,7 @@ void usage() {
         "    -f [f]     min fraction of alterative allele in a read family [0.002]\n"
 
         "    -e [f]     precision of allele frequency while calculate likelihood ratio [0.00001]\n"
-        "    -g [f]     gap between likelihood ratios of major and rest genotypes [5.0]\n"
+        "    -g [f]     gap between likelihood ratios of major and rest genotypes [2.0]\n"
         "    -x [i]     Encoding offset for phred quality scores [33]\n"
         "    -t [i]     min support num to construct a haplotype seq [3]\n"
         "    -c         discard soft-clipping reads [false]\n"
