@@ -1072,9 +1072,9 @@ void trimEnd(SeqLib::BamRecord &br, const Option &opt)
     }
 
     // set new start position of reads
-    size_t cg_S_length = ( cg[0].Type() == 'S' ? cg[0].Length() : 0 );
     size_t rev_S_length = ( rev[0].Type() == 'S' ? rev[0].Length() : 0 );
-    br.SetPosition(br.Position() + rev_S_length - cg_S_length );
+
+    br.SetPosition( getGenomePosition(br.Position(), rev_S_length, cg) );
 
     cerr << " final: " << rev << ' ' << br.Position() << endl;
 
