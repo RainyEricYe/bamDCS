@@ -514,7 +514,6 @@ mCharDouble llh_genotype(const string &s, const string &q, const Option &opt)
         pDoubleCharSet t1 = maxLogLikelihood(s,errV,ntV_1,opt,1);
         pDoubleCharSet t2 = maxLogLikelihood(s,errV,ntV_2,opt,1);
 
-
         if ( two.first - t1.first > opt.lhrGapCutoff )
             ntP[ ntV[0].first ] = 1 - boost::math::cdf(X2_dist, 2*(two.first - t1.first) );
 
@@ -548,7 +547,6 @@ mCharDouble llh_genotype(const string &s, const string &q, const Option &opt)
     pDoubleCharSet tm2 = maxLogLikelihood(s,errV,ntV2,opt,2);
     pDoubleCharSet tm3 = maxLogLikelihood(s,errV,ntV3,opt,2);
 
-
     if ( three.first - tm1.first > opt.lhrGapCutoff )
         ntP[ ntV[0].first ] = 1 - boost::math::cdf(X2_dist, 2*(three.first - tm1.first) );
 
@@ -560,62 +558,6 @@ mCharDouble llh_genotype(const string &s, const string &q, const Option &opt)
 
     return ntP;
 
-
-
-
-
-    /*
-    // delete pair<allele, supportNum> which has too few support reads or too small fraction
-    while ( ntV.size() ) {
-        if ( ntV.back().second < opt.minSupOnEachStrand || ntV.back().second / depth < opt.minFractionInFam )
-            ntV.pop_back();
-        else
-            break;
-    }
-
-    // none allele remain
-    if ( ntV.empty() ) {
-  //      return ntS;
-        return ntP;
-    }
-
-    // only one allele
-    if ( ntV.size() == 1 ) {
-        if ( ntV[0].second >= opt.minSupOnEachStrand )
-            ntS.insert( ntV[0].first );
-
-        return ntS;
-    }
-
-    // two or more alleles
-    vector<double> errV = quaToErrorRate(q, opt);
-    vector<pDoubleCharSet> llhV;
-
-    if ( ntV.size() > 1 ) {
-        llhV.push_back( maxLogLikelihood(s,errV,ntV,opt,1) );
-        llhV.push_back( maxLogLikelihood(s,errV,ntV,opt,2) );
-
-        if ( ntV.size() > 2 ) {
-            llhV.push_back(  maxLogLikelihood(s,errV,ntV,opt,3) );
-        }
-    }
-
-    for ( auto & p : llhV ) {
-        if ( p.second.size() == 3 ) p.first -= 2 * opt.lhrGapCutoff;
-        if ( p.second.size() == 2 ) p.first -=     opt.lhrGapCutoff;
-    }
-
-    if ( llhV.size() > 1 )
-        sort(llhV.begin(), llhV.end(), _cmpByFirst); // desending sort
-
-    // four alleles is really rare, so do not consider it here
-    if ( llhV.empty() ) {
-        return ntS;
-    }
-    else
-        return llhV[0].second;
-
-        */
 }
 
 pDoubleCharSet maxLogLikelihood(const string &s, const vector<double> &e, const vector<pCharUlong> &v, const Option &opt, const int mode)
