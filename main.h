@@ -443,15 +443,7 @@ vector< mCharDouble > zipHetPoint(const vector< mCharDouble > &w, const vector< 
             mCharDouble::const_iterator ci = c[j].find( wi->first );
             if ( ci != c[j].end() ) {
                 if ( ci->second > opt.pvalue ) continue;
-               // nt.insert( *it );
-/*
-                double pcr_e = 10 * pow(opt.pcrError,2);
-                nt[ wi->first ] = wi->second + ci->second + pcr_e
-                                - wi->second * ci->second
-                                - wi->second * pcr_e
-                                - ci->second * pcr_e
-                                + wi->second * ci->second * pcr_e;
-*/
+
                 nt[ wi->first ] = wi->second + ci->second - wi->second * ci->second
                                 + 10 * pow(opt.pcrError,2);
             }
@@ -467,7 +459,6 @@ vector< mCharDouble > zipHetPoint(const vector< mCharDouble > &w, const vector< 
 mCharDouble llh_genotype(const string &s, const string &q, const Option &opt)
 {
     // allele set which will be returned
-//    set<char> ntS;
     mCharDouble ntP; // nt --> pvalue
     boost::math::chi_squared X2_dist(1);
 
@@ -475,16 +466,13 @@ mCharDouble llh_genotype(const string &s, const string &q, const Option &opt)
     mCharUlong fr;
 
     double depth( s.size() );
-//    double small_diff(1e-10);
 
     for ( size_t i(0); i != depth; i++ ) {
         if ( lowQuality(q[i], opt) || s[i] == 'N' )  continue;
-//        if ( s[i] == 'N' )  continue;
         fr[ s[i] ]++;
     }
 
     if ( fr.empty() ) {
-//        return ntS;
         return ntP;
     }
 
@@ -494,9 +482,6 @@ mCharDouble llh_genotype(const string &s, const string &q, const Option &opt)
 
     // only one allele
     if ( ntV.size() == 1 ) {
-       // if ( ntV[0].second >= opt.minSupOnEachStrand ) {
-         //   ntS.insert( ntV[0].first );
-        //}
 
         pDoubleCharSet tmp = maxLogLikelihood(s,errV,ntV,opt,1);
         for ( auto &e : errV ) tmp.first -= ( log(e/3) ); // null hypothesis
@@ -507,10 +492,6 @@ mCharDouble llh_genotype(const string &s, const string &q, const Option &opt)
         //return ntS;
         return ntP;
     }
-
-//    if ( ntV.size() > 1 )
-  //      sort( ntV.begin(), ntV.end(), _cmpBySecond ); // descending sort
-
 
     if ( ntV.size() == 2 ) {
         pDoubleCharSet two = maxLogLikelihood(s,errV,ntV,opt,2);
@@ -658,14 +639,8 @@ pDoubleCharSet maxLogLikelihood(const string &s, const vector<double> &e, const 
         for ( size_t i(0); i != 3; i++ ) {
             total += v[i].second;
         }
-//
-//       for ( size_t i(0); i != 3; i++ )
-//           mBaseFreq[ v[i].first ] = v[i].second/total;
-//
-//       llh = calculate_llh(s, e, mBaseFreq);
 
         // although 3 alleles, only two free variables, maximize the function of two variables.
-        // future plan
 
         double delta(0.01);
         double delta_tol(1e-8);
