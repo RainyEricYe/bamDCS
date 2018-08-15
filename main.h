@@ -150,6 +150,7 @@ void usage() {
         "    -t [i]     min support num to construct a haplotype seq [3]\n"
         "    -c         discard soft-clipping reads [false]\n"
         "    -C [i]     soft trim N base from both ends of read [5]\n"
+        "    -p [f]     expected PCR error rate during library construction [1e-5]\n"
 
         "    -o [s]     output bam File directly []\n"
         "    -d         debug mode [false]\n"
@@ -444,8 +445,15 @@ vector< mCharDouble > zipHetPoint(const vector< mCharDouble > &w, const vector< 
                 if ( ci->second > opt.pvalue ) continue;
                // nt.insert( *it );
 
-                nt[ wi->first ] = wi->second + ci->second - wi->second * ci->second
-                    + 10 * pow(opt.pcrError,2);
+                double pcr_e = 10 * pow(opt.pcrError,2);
+                nt[ wi->first ] = wi->second + ci->second + pcr_e
+                                - wi->second * ci->second
+                                - wi->second * pcr_e
+                                - ci->second * pcr_e
+                                + wi->second * ci->second * pcr_e;
+
+              //  nt[ wi->first ] = wi->second + ci->second - wi->second * ci->second
+               //     + 10 * pow(opt.pcrError,2);
             }
         }
 
