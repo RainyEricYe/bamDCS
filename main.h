@@ -935,6 +935,7 @@ void trimEnd(SeqLib::BamRecord &br, const Option &opt)
         vrc.push_back( rc[0] );
         for ( size_t i(2); i < rc.size(); i++ ) vrc.push_back( rc[i] );
     }
+    /*
     else if ( rc[1].Type() == 'M' && rc[1].Length() <= 5 ) { // short M near end
         if ( rc[2].Type() == 'I' ) {
             CigarField tf('S', rc[0].Length() + rc[1].Length() + rc[2].Length() );
@@ -950,6 +951,7 @@ void trimEnd(SeqLib::BamRecord &br, const Option &opt)
             for ( auto &p : rc ) vrc.push_back(p);
         }
     }
+    */
     else {
         for ( auto &p : rc ) vrc.push_back(p);
     }
@@ -968,6 +970,7 @@ void trimEnd(SeqLib::BamRecord &br, const Option &opt)
         rv.push_back( vrc[0] );
         for ( size_t i(2); i < vrc.size(); i++ ) rv.push_back( vrc[i] );
     }
+    /*
     else if ( vrc[1].Type() == 'M' && vrc[1].Length() <= 5 ) { // short M near end
         if ( vrc[2].Type() == 'I' ) {
 
@@ -985,6 +988,7 @@ void trimEnd(SeqLib::BamRecord &br, const Option &opt)
             for ( auto &p : vrc ) rv.push_back(p);
         }
     }
+    */
     else {
         for ( auto &p : vrc ) rv.push_back(p);
     }
