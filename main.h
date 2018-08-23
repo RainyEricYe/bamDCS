@@ -926,7 +926,7 @@ void trimEnd(SeqLib::BamRecord &br, const Option &opt)
     // deal with I D M near head & tail
 
     vector<CigarField> vrc;
-    if ( rc[1].Type() == 'I' ) { // combine I & S
+    if ( rc[1].Type() == 'I' || rc[1].Type() == 'S' ) { // combine I & S
         CigarField tf('S', rc[0].Length() + rc[1].Length() );
         vrc.push_back(tf);
         for ( size_t i(2); i < rc.size(); i++ ) vrc.push_back( rc[i] );
@@ -960,7 +960,7 @@ void trimEnd(SeqLib::BamRecord &br, const Option &opt)
 
     // reverse vrc
     vector<CigarField> rv;
-    if ( vrc[1].Type() == 'I' ) { // combine I & S
+    if ( vrc[1].Type() == 'I' || rc[1].Type() == 'S' ) { // combine I & S
         CigarField tf('S', vrc[0].Length() + vrc[1].Length() );
         rv.push_back(tf);
         for ( size_t i(2); i < vrc.size(); i++ ) rv.push_back( vrc[i] );
