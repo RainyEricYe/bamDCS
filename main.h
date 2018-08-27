@@ -444,7 +444,7 @@ vector< mCharDouble > zipHetPoint(const vector< mCharDouble > &w, const vector< 
             if ( ci != c[j].end() ) {
                 if ( ci->second > opt.pvalue ) continue;
 
-                nt[ wi->first ] = wi->second + ci->second - wi->second * ci->second;
+                nt[ wi->first ] = wi->second + ci->second - wi->second * ci->second
                                 + 10 * pow(opt.pcrError,2);
             }
         }
