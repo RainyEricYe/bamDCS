@@ -8,9 +8,10 @@ int main( int argc, char **argv )
 
     if ( argc < 2 ) usage(), exit(1);
 
+    srand (time(NULL));
     int c;
     Option opt;
-    while ( (c=getopt(argc,argv,"q:Q:s:S:N:f:e:g:x:t:o:C:p:cdvh")) != -1 ) {
+    while ( (c=getopt(argc,argv,"q:Q:s:S:N:f:e:g:x:t:o:C:p:r:cdvh")) != -1 ) {
         switch (c) {
             case 'q': opt.baseQuaCutoff = atoi(optarg);               break;
             case 'Q': opt.mapQuaCutoff  = atoi(optarg);               break;
@@ -30,8 +31,9 @@ int main( int argc, char **argv )
             case 'c': opt.filtSoftClip = true;                        break;
             case 'C': opt.softEndTrim = atoi(optarg);                 break;
             case 'p': opt.pcrError = atof(optarg);                    break;
+            case 'r': opt.fracToUse = atof(optarg);                   break;
 
-            case 'd': opt.debug = true;                                   break;
+            case 'd': opt.debug = true;                               break;
             case 'v': cerr << VERSION << endl;                        exit(1);
             case 'h':
             default:  usage();                                        exit(1);
@@ -98,6 +100,10 @@ int main( int argc, char **argv )
             // find S in cigar string
             if ( opt.filtSoftClip && cigarAB.find('S') != string::npos )
                 continue;
+
+            double rand_ratio = rand() / (double)RAND_MAX;
+
+            if ( rand_ratio > opt.fracToUse ) continue;
 
             if ( ra.FirstFlag() ) {
                 watsonFam[cigarAB].push_back(ra);
