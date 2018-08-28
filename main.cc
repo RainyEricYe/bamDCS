@@ -11,7 +11,7 @@ int main( int argc, char **argv )
     srand (time(NULL));
     int c;
     Option opt;
-    while ( (c=getopt(argc,argv,"q:Q:s:S:N:f:e:g:x:t:o:C:p:r:cdvh")) != -1 ) {
+    while ( (c=getopt(argc,argv,"q:Q:s:S:N:f:e:g:x:t:o:C:p:n:cdvh")) != -1 ) {
         switch (c) {
             case 'q': opt.baseQuaCutoff = atoi(optarg);               break;
             case 'Q': opt.mapQuaCutoff  = atoi(optarg);               break;
@@ -31,7 +31,7 @@ int main( int argc, char **argv )
             case 'c': opt.filtSoftClip = true;                        break;
             case 'C': opt.softEndTrim = atoi(optarg);                 break;
             case 'p': opt.pcrError = atof(optarg);                    break;
-            case 'r': opt.fracToUse = atof(optarg);                   break;
+            case 'n': opt.randNread = atoi(optarg);                   break;
 
             case 'd': opt.debug = true;                               break;
             case 'v': cerr << VERSION << endl;                        exit(1);
@@ -70,6 +70,22 @@ int main( int argc, char **argv )
     }
 
     string famLine;
+    size_t totalReadPair(0);
+
+    if ( opt.randNread != 0 ) {
+        while ( getline(inRdf, famLine) ) {
+            istringstream stm(famLine);
+            string chr, beg, end;
+            size_t cnt;
+            stm >> chr >> beg >> end >> cnt;
+            totalReadPair += cnt/2;
+        }
+        inRdf.seekg(0);
+    }
+
+    if ( opt.randNread > totalReadPair )
+        cerr << "WARNING: -n random select N read pairs > total " << totalReadPair << " read pairs in file";
+
     while ( getline(inRdf, famLine) ) {
         istringstream stm(famLine);
         string chr, beg, end;
@@ -102,8 +118,8 @@ int main( int argc, char **argv )
                 continue;
 
             double rand_ratio = rand() / (double)RAND_MAX;
-
-            if ( rand_ratio > opt.fracToUse ) continue;
+            if ( opt.randNread != 0
+                    && rand_ratio > opt.randNread / (double)totalReadPair ) continue;
 
             if ( ra.FirstFlag() ) {
                 watsonFam[cigarAB].push_back(ra);

@@ -53,7 +53,7 @@ class Option {
             pvalue(0.001),
             pcrError(1.0e-5),
             softEndTrim(5),
-            fracToUse(1.0) {}
+            randNread(0) {}
 
         ~Option(){}
 
@@ -75,7 +75,7 @@ class Option {
         double pvalue;
         double pcrError;
         ulong softEndTrim;
-        double fracToUse;
+        size_t randNread;
 };
 
 typedef map<string, vector<SeqLib::BamRecord> > mStrBrV;
@@ -153,7 +153,7 @@ void usage() {
         "    -c         discard soft-clipping reads [false]\n"
         "    -C [i]     soft trim N base from both ends of read [5]\n"
         "    -p [f]     expected PCR error rate during library construction [1e-5]\n"
-        "    -r [f]     fraction of reads to be randomly selected and used [1.0]\n"
+        "    -n [i]     N read pairs to be randomly selected and used [0, total]\n"
 
         "    -o [s]     output bam File directly []\n"
         "    -d         debug mode [false]\n"
