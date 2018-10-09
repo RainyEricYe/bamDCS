@@ -80,7 +80,8 @@ int main( int argc, char **argv )
             stm >> chr >> beg >> end >> cnt;
             totalReadPair += cnt/2;
         }
-        inRdf.seekg(0);
+        inRdf.close();
+        inRdf.open(inRdfFile.c_str());
     }
 
     if ( opt.randNread > totalReadPair )
