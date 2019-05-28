@@ -1176,7 +1176,7 @@ mCharDouble llh_genotype(const string &s, const string &q, const Option &opt)
 
     string new_s(""), new_q("");
     for ( size_t i(0); i != s.size(); i++ ) {
-        if ( lowQuality(q[i], opt) || s[i] == 'N' )  continue; // fr['N'] == 0
+        if ( lowQuality(q[i], opt) || s[i] == 'N' || s[i] == '*' )  continue; // fr['N'] == 0
         fr[ s[i] ]++;
         new_s += s[i];
         new_q += q[i];
