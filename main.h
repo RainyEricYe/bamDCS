@@ -1266,7 +1266,7 @@ mCharDouble llh_genotype(const string &s, const string &q, const Option &opt)
                 << "] for base[" << it->first << "]" << endl;
         }
 
-        if ( cl_4 - cl_3 > 0 )
+        if ( cl_4 - cl_3 > opt.lhrGapCutoff )
             ntP[ it->first ] = 1 - boost::math::cdf(X2_dist, 2*(cl_4 - cl_3) );
     }
 
