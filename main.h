@@ -379,7 +379,11 @@ void sscs(mStrBrV &watsonFam,
     }
 
     // only one pair of reads, output directly
-    if ( wcBrV.size() == 2 ) {
+    if ( wcBrV.size() == 2 && opt.outBamFile.size() > 0 ) {
+        if ( opt.softEndTrim > 0 ) {
+            trimEnd( wcBrV[0], opt );
+            trimEnd( wcBrV[1], opt );
+        }
         writer.WriteRecord( wcBrV[0] );
         writer.WriteRecord( wcBrV[1] );
     }
