@@ -130,18 +130,45 @@ int main( int argc, char **argv )
                 crickFam[cigarAB].push_back(ra);
                 crickFam[cigarAB].push_back(rb);
             }
+
+            cigs.push_back(cigarAB);
         }
 
         // calibrate read family because cigar string might not be accurate
         calibrateFam(watsonFam);
         calibrateFam(crickFam);
 
-        for ( mStrBrV::iterator it = watsonFam.begin(); it != watsonFam.end(); it++ ) {
-            string cg = it->first;
+        for ( auto &cg : cigs ) {
+            mStrBrV::const_iterator w = watsonFam.find( cg );
+            mStrBrV::const_iterator c =  crickFam.find( cg );
 
-            if ( testCigarFam(watsonFam, crickFam, cg, opt) ) {
-                printConsensusRead(outFQ1, outFQ2, watsonFam, crickFam,
-                        cg, opt, chrBegEnd, writer );
+            if ( w != watsonFam.end() ) {
+                if ( c != crickFam.end() ) {
+                    if ( testCigarFam(watsonFam, crickFam, cg, opt) ) { // DCS
+                        printConsensusRead(outFQ1, outFQ2, watsonFam, crickFam, cg, opt, chrBegEnd, writer );
+                    }
+                    else if (  w->second.size() <= opt.maxSupOnEachStrand * 2
+                            && c->second.size() <= opt.maxSupOnEachStrand * 2 ) {
+                        sscs(watsonFam, crickFam, cg, opt, chrBegEnd, writer);
+                    }
+                    else {
+                        continue; // Fam is too big
+                    }
+                }
+                else if ( w->second.size() <= opt.maxSupOnEachStrand * 2 ) {
+                    sscs(watsonFam, crickFam, cg, opt, chrBegEnd, writer);
+                }
+                else {
+                    continue; // Fam is too big
+                }
+            }
+            else if ( c != crickFam.end() ) {
+                if ( c->second.size() <= opt.maxSupOnEachStrand * 2 ) {
+                    sscs(watsonFam, crickFam, cg, opt, chrBegEnd, writer);
+                }
+            }
+            else {
+                cerr << "weird cigar: " << cg << endl;
             }
         }
     }

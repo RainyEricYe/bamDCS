@@ -106,6 +106,9 @@ SeqLib::BamHeader removeReadGroup( const SeqLib::BamHeader & );
 void calibrateFam(mStrBrV &);
 bool testCigarFam(mStrBrV &, mStrBrV &, const string &, const Option &);
 void printConsensusRead(ogzstream &,ogzstream &,mStrBrV &,mStrBrV &,const string &,const Option &,const string &, SeqLib::BamWriter &);
+void sscs(mStrBrV &,mStrBrV &,const string &,const Option &,const string &, SeqLib::BamWriter &);
+void addPcrError( vector< mCharDouble > &wcHetPos, const Option &opt);
+
 string getQuaFromPvalue( const vector< mCharDouble > &quaV, const string &s, const Option &opt );
 string adjust_p(const string &qs, const Option &opt);
 
@@ -115,6 +118,7 @@ vector< mCharDouble > hetPoint(const BamRecordVector &, const Option &);
 //vCharSet zipHetPoint(const vCharSet &, const vCharSet &);
 vector< mCharDouble > zipHetPoint(const vector< mCharDouble > &, const vector< mCharDouble > &, const Option &opt);
 vString consensusSeq(const BamRecordVector &, const BamRecordVector &, const vector< mCharDouble > &, const Option &);
+vString consensusSeq(const BamRecordVector &wcBrV, const vector< mCharDouble > &wcHetPos, const Option &opt);
 
 //set<char> llh_genotype(const string &, const string &, const Option &);
 mCharDouble llh_genotype(const string &, const string &, const Option &);
@@ -355,10 +359,89 @@ void printConsensusRead(
     }
 }
 
+void sscs(mStrBrV &watsonFam,
+        mStrBrV &crickFam,
+        const string &cg,
+        const Option &opt,
+        const string &chrBegEnd,
+        SeqLib::BamWriter &writer )
+{
+    vector< mCharDouble > wcHetPos;
+    BamRecordVector wcBrV;
+
+    // wcBrV contain br from both Fam
+    for ( auto &br : watsonFam[cg] ) {
+        wcBrV.push_back(br);
+    }
+
+    for ( auto &br : crickFam[cg] ) {
+        wcBrV.push_back(br);
+    }
+
+    // only one pair of reads, output directly
+    if ( wcBrV.size() == 2 ) {
+        writer.WriteRecord( wcBrV[0] );
+        writer.WriteRecord( wcBrV[1] );
+    }
+
+    // more than one pairs of reads, calculate pvalue + PCR error
+    wcHetPos = hetPoint(wcBrV, opt);
+    addPcrError(wcHetPos, opt);
+
+    vString seqV = consensusSeq(wcBrV, wcHetPos, opt);
+
+    string Qname("@");
+    Qname += chrBegEnd + ":" + cg + ":";
+
+    if ( seqV.empty() ) return;
+
+    for ( size_t i(0); i != seqV.size(); i++ ) {
+        string seq = seqV[i];
+        size_t length = seq.size()/2;
+        string quaStr = getQuaFromPvalue( wcHetPos, seq, opt );
+
+        string id1 = Qname + _itoa(i) + "/1";
+        string id2 = Qname + _itoa(i) + "/2";
+
+        string rd1 = seq.substr( 0, length );
+        string rd2 = reverseComplement( seq.substr(length) );
+
+        string quaStr1 = quaStr.substr( 0, length );
+        string quaStr2 = quaStr.substr( length    );
+
+        reverse( quaStr2.begin(), quaStr2.end() );
+        if ( opt.outBamFile.size() > 0 ) {
+            SeqLib::BamRecord br1 = wcBrV.at(0);
+            SeqLib::BamRecord br2 = wcBrV.at(1);
+
+            if ( opt.softEndTrim > 0 ) {
+                trimEnd(br1, opt);
+                trimEnd(br2, opt);
+            }
+
+            br1.SetSequence( rd1 );
+            br2.SetSequence( seq.substr(length) );
+
+            reverse( quaStr2.begin(), quaStr2.end() );
+            br1.SetQualities( quaStr1, 33 );
+            br2.SetQualities( quaStr2, 33 );
+
+            br1.RemoveAllTags();
+            br2.RemoveAllTags();
+
+            br1.AddZTag("RG", "foo");
+            br2.AddZTag("RG", "foo");
+
+            writer.WriteRecord( br1 );
+            writer.WriteRecord( br2 );
+        }
+    }
+}
+
 // get heterozygous points based on watson or crick family only
 vector< mCharDouble > hetPoint(const BamRecordVector &brV, const Option &opt)
 {
-//    vCharSet pt;
+    //    vCharSet pt;
     vector< mCharDouble > pt;
     vString seqV, quaV;
 
@@ -397,6 +480,18 @@ vector< mCharDouble > hetPoint(const BamRecordVector &brV, const Option &opt)
     }
 
     return pt;
+}
+
+void addPcrError( vector< mCharDouble > &wcHetPos, const Option &opt)
+{
+    for ( auto &ntP : wcHetPos ) {
+        for ( mCharDouble::iterator it = ntP.begin(); it != ntP.end(); it++ ) {
+            it->second += 10 * opt.pcrError;
+            if ( it->second > 1 ) it->second = 1;
+        }
+    }
+
+    return;
 }
 
 string getQuaFromPvalue( const vector< mCharDouble > &quaV, const string &s, const Option &opt )
@@ -807,6 +902,52 @@ vString consensusSeq(const BamRecordVector &w, const BamRecordVector &c, const v
     return seqV;
 }
 
+// for sscs
+vString consensusSeq(const BamRecordVector &wcBrV,
+        const vector< mCharDouble > &wcHetPos,
+        const Option &opt )
+{
+    vString seqV;
+    if ( wcHetPos.empty() ) return seqV;
+
+    mStrUlong mSeqN_wc;
+    string seq("");
+
+    // count N
+    size_t Ncnt(0);
+    for ( auto & p : wcHetPos ) {
+        if ( p.empty() )
+            Ncnt++;
+    }
+
+    if ( Ncnt > wcHetPos.size() * opt.Ncutoff )
+        return seqV;
+
+    // get potential seq based on original read and heterozygous site
+    for ( auto &br : wcBrV ) {
+        if ( !br.ReverseFlag() ) { // + strand
+            seq = br.Sequence();
+        }
+        else { // - strand
+            seq += br.Sequence();
+            mSeqN_wc[ ignoreError(seq, wcHetPos) ]++;
+        }
+    }
+
+    for ( mStrUlong::iterator it = mSeqN_wc.begin(); it != mSeqN_wc.end(); it++ ) {
+        if ( it->second >= opt.minSupOnHaplotype ) {
+            size_t len = it->first.size() / 2;
+            if (   countN( it->first.substr(0,len) ) > opt.Ncutoff * len
+                    && countN( it->first.substr(len,len) ) > opt.Ncutoff * len
+               )  continue;
+
+            seqV.push_back( it->first );
+        }
+    }
+
+    return seqV;
+}
+
 string ignoreError(const string &s, const vector< mCharDouble > &v)
 {
     string seq("");
@@ -1184,6 +1325,10 @@ mCharDouble llh_genotype(const string &s, const string &q, const Option &opt)
 
     double depth(new_s.size());
     vector<double> errV = quaToErrorRate(new_q, opt);
+
+    if ( depth == 0 ) {
+        return ntP;
+    }
 
     fn_data data;
     data.base = new_s;
