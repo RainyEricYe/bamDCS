@@ -95,7 +95,7 @@ int main( int argc, char **argv )
         string chrBegEnd = chr + ":" + beg + "-" + end;
 
         mStrBrV watsonFam, crickFam;
-        vector<string> cigs;
+        set<string> cigs;
 
         // read pairs
         for ( size_t i(0); i != cnt/2; i++ ) {
@@ -131,7 +131,7 @@ int main( int argc, char **argv )
                 crickFam[cigarAB].push_back(rb);
             }
 
-            cigs.push_back(cigarAB);
+            cigs.insert(cigarAB);
         }
 
         // calibrate read family because cigar string might not be accurate
