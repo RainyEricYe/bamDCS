@@ -82,6 +82,7 @@ typedef map<string, vector<SeqLib::BamRecord> > mStrBrV;
 typedef map<char,double> mCharDouble;
 typedef map<char, ulong> mCharUlong;
 typedef map<string,ulong> mStrUlong;
+typedef map<char, vector<double> > mCvD;
 
 typedef pair<char,ulong> pCharUlong;
 typedef pair<double, set<char> > pDoubleCharSet;
@@ -107,26 +108,25 @@ void calibrateFam(mStrBrV &);
 bool testCigarFam(mStrBrV &, mStrBrV &, const string &, const Option &);
 void printConsensusRead(ogzstream &,ogzstream &,mStrBrV &,mStrBrV &,const string &,const Option &,const string &, SeqLib::BamWriter &);
 void sscs(mStrBrV &,mStrBrV &,const string &,const Option &,const string &, SeqLib::BamWriter &);
-void addPcrError( vector< mCharDouble > &wcHetPos, const Option &opt);
+void addPcrError( vector< mCvD > &wcHetPos, const Option &opt);
 
-string getQuaFromPvalue( const vector< mCharDouble > &quaV, const string &s, const Option &opt );
+string getQuaFromPvalue( const vector< mCvD > &quaV, const string &s, const Option &opt );
 string adjust_p(const string &qs, const Option &opt);
 
 //vCharSet hetPoint(const BamRecordVector &, const Option &);
-vector< mCharDouble > hetPoint(const BamRecordVector &, const Option &);
+vector< mCvD > hetPoint(const BamRecordVector &, const Option &);
 
 //vCharSet zipHetPoint(const vCharSet &, const vCharSet &);
-vector< mCharDouble > zipHetPoint(const vector< mCharDouble > &, const vector< mCharDouble > &, const Option &opt);
-vString consensusSeq(const BamRecordVector &, const BamRecordVector &, const vector< mCharDouble > &, const Option &);
-vString consensusSeq(const BamRecordVector &wcBrV, const vector< mCharDouble > &wcHetPos, const Option &opt);
+vector< mCvD > zipHetPoint(const vector< mCvD > &, const vector< mCvD > &, const Option &opt);
+vString consensusSeq(const BamRecordVector &, const BamRecordVector &, const vector< mCvD > &, const Option &);
+vString consensusSeq(const BamRecordVector &wcBrV, const vector< mCvD > &wcHetPos, const Option &opt);
 
-//set<char> llh_genotype(const string &, const string &, const Option &);
-mCharDouble llh_genotype(const string &, const string &, const Option &);
+mCvD  llh_genotype(const string &, const string &, const Option &);
 
 pDoubleCharSet maxLogLikelihood(const string &, const vector<double> &, const vector<pCharUlong> &, const Option &, const int);
 double minus_llh_3nt( int m, double x[], const vector<pCharUlong> &v, const string &s, const vector<double> &e,  double lower[], double upper[], double sumBound );
 double calculate_llh(const string &, const vector<double> &, mCharDouble &);
-string ignoreError(const string &, const vector< mCharDouble > &);
+string ignoreError(const string &, const vector< mCvD > &);
 void trimEnd(SeqLib::BamRecord &br, const Option &opt);
 //SeqLib::Cigar trimCigar(SeqLib::BamRecord &br, const SeqLib::Cigar &cg, const Option &opt);
 size_t getGenomePosition(size_t pos, ulong i, const Cigar &cg);
@@ -285,7 +285,7 @@ void printConsensusRead(
 
     // 0-based index of heterozygous point --> vector of allele set
 //    vCharSet wHetPos, cHetPos, sameHetPos;
-    vector< mCharDouble > wHetPos, cHetPos, sameHetPos;
+    vector< mCvD > wHetPos, cHetPos, sameHetPos;
 
     // find heterzygous point on each fam
     wHetPos = hetPoint(watsonFam[cg], opt);
@@ -366,7 +366,7 @@ void sscs(mStrBrV &watsonFam,
         const string &chrBegEnd,
         SeqLib::BamWriter &writer )
 {
-    vector< mCharDouble > wcHetPos;
+    vector< mCvD > wcHetPos;
     BamRecordVector wcBrV;
 
     // wcBrV contain br from both Fam
@@ -380,6 +380,7 @@ void sscs(mStrBrV &watsonFam,
 
     // only one pair of reads, output directly
     if ( wcBrV.size() == 2 && opt.outBamFile.size() > 0 ) {
+        return;
         if ( opt.softEndTrim > 0 ) {
             trimEnd( wcBrV[0], opt );
             trimEnd( wcBrV[1], opt );
@@ -440,13 +441,14 @@ void sscs(mStrBrV &watsonFam,
             writer.WriteRecord( br2 );
         }
     }
+
+    return;
 }
 
 // get heterozygous points based on watson or crick family only
-vector< mCharDouble > hetPoint(const BamRecordVector &brV, const Option &opt)
+vector< mCvD > hetPoint(const BamRecordVector &brV, const Option &opt)
 {
-    //    vCharSet pt;
-    vector< mCharDouble > pt;
+    vector< mCvD > pt;
     vString seqV, quaV;
 
     // too few reads to support heterozygous point. two reads form a pair.
@@ -486,19 +488,19 @@ vector< mCharDouble > hetPoint(const BamRecordVector &brV, const Option &opt)
     return pt;
 }
 
-void addPcrError( vector< mCharDouble > &wcHetPos, const Option &opt)
+void addPcrError( vector< mCvD > &wcHetPos, const Option &opt)
 {
-    for ( auto &ntP : wcHetPos ) {
-        for ( mCharDouble::iterator it = ntP.begin(); it != ntP.end(); it++ ) {
-            it->second += 10 * opt.pcrError;
-            if ( it->second > 1 ) it->second = 1;
+    for ( auto &ntPF : wcHetPos ) {
+        for ( mCvD::iterator it = ntPF.begin(); it != ntPF.end(); it++ ) {
+            it->second.at(0) += 10 * opt.pcrError;
+            if ( it->second.at(0) > 1 ) it->second.at(0) = 1.0;
         }
     }
 
     return;
 }
 
-string getQuaFromPvalue( const vector< mCharDouble > &quaV, const string &s, const Option &opt )
+string getQuaFromPvalue( const vector< mCvD > &quaV, const string &s, const Option &opt )
 {
     ostringstream q("");
 
@@ -508,10 +510,10 @@ string getQuaFromPvalue( const vector< mCharDouble > &quaV, const string &s, con
             q << '$';
         }
         else {
-            mCharDouble::const_iterator it = quaV[i].find( s[i] );
+            mCvD::const_iterator it = quaV[i].find( s[i] );
 
             if ( it != quaV[i].end() ) {
-                double f = -10.0 * log( it->second )/log(10.0);
+                double f = -10.0 * log( it->second.at(0) )/log(10.0);
 
        //         if ( f > 41.0 ) f = 41.0;
          //       if ( f < 0.0  ) f = 0.0;
@@ -527,27 +529,25 @@ string getQuaFromPvalue( const vector< mCharDouble > &quaV, const string &s, con
     return q.str();
 }
 
-vector< mCharDouble > zipHetPoint(const vector< mCharDouble > &w, const vector< mCharDouble > &c, const Option &opt)
+vector< mCvD > zipHetPoint(const vector< mCvD > &w, const vector< mCvD > &c, const Option &opt)
 {
-//    vCharSet samePt;
-    vector< mCharDouble > samePt;
+    vector< mCvD > samePt;
 
     if ( w.empty() || c.empty() )
         return samePt;
 
     for ( size_t j(0); j != w.size(); j++ ) {
-        //set<char> nt;
-        mCharDouble nt;
+        mCvD nt;
 
-        for ( mCharDouble::const_iterator wi = w[j].begin(); wi != w[j].end(); wi++ ) {
-            if ( wi->second > opt.pvalue ) continue;
+        for ( mCvD::const_iterator wi = w[j].begin(); wi != w[j].end(); wi++ ) {
+            if ( wi->second.at(0) > opt.pvalue ) continue;
 
-            mCharDouble::const_iterator ci = c[j].find( wi->first );
+            mCvD::const_iterator ci = c[j].find( wi->first );
             if ( ci != c[j].end() ) {
-                if ( ci->second > opt.pvalue ) continue;
+                if ( ci->second.at(0) > opt.pvalue ) continue;
 
-                nt[ wi->first ] = wi->second + ci->second - wi->second * ci->second
-                                + 10 * pow(opt.pcrError,2);
+                nt[ wi->first ].push_back( wi->second.at(0) + ci->second.at(0) - wi->second.at(0) * ci->second.at(0) + 10 * pow(opt.pcrError,2) );
+                nt[ wi->first ].push_back( (wi->second.at(1) + ci->second.at(1)) / 2);
             }
         }
 
@@ -849,7 +849,7 @@ double minus_llh_3nt( int m, double x[], const vector<pCharUlong> &v, const stri
     return -llh;
 }
 
-vString consensusSeq(const BamRecordVector &w, const BamRecordVector &c, const vector< mCharDouble > &sameHetPos, const Option &opt)
+vString consensusSeq(const BamRecordVector &w, const BamRecordVector &c, const vector< mCvD > &sameHetPos, const Option &opt)
 {
     vString seqV;
     if ( sameHetPos.empty() ) return seqV;
@@ -908,7 +908,7 @@ vString consensusSeq(const BamRecordVector &w, const BamRecordVector &c, const v
 
 // for sscs
 vString consensusSeq(const BamRecordVector &wcBrV,
-        const vector< mCharDouble > &wcHetPos,
+        const vector< mCvD > &wcHetPos,
         const Option &opt )
 {
     vString seqV;
@@ -952,7 +952,7 @@ vString consensusSeq(const BamRecordVector &wcBrV,
     return seqV;
 }
 
-string ignoreError(const string &s, const vector< mCharDouble > &v)
+string ignoreError(const string &s, const vector< mCvD > &v)
 {
     string seq("");
     for ( size_t i(0); i != s.size(); i++ ) {
@@ -965,7 +965,7 @@ string ignoreError(const string &s, const vector< mCharDouble > &v)
         }
         else {
 
-            mCharDouble::const_iterator it = v[i].find( s[i] );
+            mCvD::const_iterator it = v[i].find( s[i] );
             if ( it != v[i].end() ) {
                 seq += s[i];
             }
@@ -1295,6 +1295,39 @@ string initAlleleFreq (
     return s.str();
 }
 
+string initAlleleFreq (
+        mCharUlong       &fr,
+        double           depth,
+        const set<char>  &except_bs )
+{
+    ostringstream s;
+
+    for ( auto b : "ACGT" ) {
+        set<char>::const_iterator it = except_bs.find(b);
+        if ( it != except_bs.end() ) {
+            fr[b] = 0;
+            depth -= fr[b];
+        }
+
+        if ( b== 'T' ) break;
+    }
+
+    if ( depth == 0 ) {
+        s  << "[0.25,0.25,0.25,0.25]";
+        return s.str();
+    }
+
+    s << '[';
+    for ( auto b : "ACGT" ) {
+        set<char>::const_iterator it = except_bs.find(b);
+        it != except_bs.end() ? s << 0.0 : s << fr[b] / depth;  // depth here don't contain num of except_bs
+        b == 'T' ? s << ']' : s << ',';
+        if ( b== 'T' ) break;
+    }
+
+    return s.str();
+}
+
 string _upBoundary(const char except_b)
 {
     ostringstream s;
@@ -1308,9 +1341,23 @@ string _upBoundary(const char except_b)
     return s.str();
 }
 
-mCharDouble llh_genotype(const string &s, const string &q, const Option &opt)
+string _upBoundary(const set<char> except_bs)
 {
-    mCharDouble ntP; // nt => pvalue
+    ostringstream s;
+    s << '[';
+
+    for ( auto b : "ACGT" ) {
+        set<char>::const_iterator it = except_bs.find(b);
+        it != except_bs.end() ? s << 0 : s << 1;
+        b == 'T' ? s << ']' : s << ',';
+        if ( b == 'T' ) break;
+    }
+    return s.str();
+}
+
+map<char, vector<double> > llh_genotype(const string &s, const string &q, const Option &opt)
+{
+    map<char, vector<double> > ntPF; // nt => pvalue, fraction
     boost::math::chi_squared X2_dist(1);
 
     mCharUlong fr;
@@ -1330,9 +1377,7 @@ mCharDouble llh_genotype(const string &s, const string &q, const Option &opt)
     double depth(new_s.size());
     vector<double> errV = quaToErrorRate(new_q, opt);
 
-    if ( depth == 0 ) {
-        return ntP;
-    }
+    if ( depth == 0 ) return ntPF;
 
     fn_data data;
     data.base = new_s;
@@ -1416,10 +1461,67 @@ mCharDouble llh_genotype(const string &s, const string &q, const Option &opt)
         }
 
         if ( cl_4 - cl_3 > opt.lhrGapCutoff )
-            ntP[ it->first ] = 1 - boost::math::cdf(X2_dist, 2*(cl_4 - cl_3) );
+            ntPF[ it->first ].push_back( 1 - boost::math::cdf(X2_dist, 2*(cl_4 - cl_3)) );
     }
 
-    return ntP;
+    if ( ntPF.size() == 1 ) {
+        ntPF[ ntPF.begin()->first ].push_back(1.0);
+        return ntPF;
+    }
+    else if ( ntPF.size() > 1 ) {
+        set<char> except_bs;
+        for ( auto b : "ACGT" ) {
+            map<char, vector<double> >::const_iterator it = ntPF.find(b);
+            if ( it == ntPF.end() ) {  // not in ntPF
+                except_bs.insert(b);
+            }
+            if ( b == 'T' ) break;
+        }
+
+        string AFstr = initAlleleFreq(fr, depth, except_bs);
+        alglib::real_1d_array alg_x = AFstr.c_str();
+
+        try {
+            string upBnd = _upBoundary(except_bs);
+            alglib::real_1d_array bndu = upBnd.c_str();
+
+            alglib::minbleiccreate(alg_x, state);
+            alglib::minbleicsetlc(state, c, ct);
+            alglib::minbleicsetbc(state, bndl, bndu);
+            alglib::minbleicsetcond(state, epsg, epsf, epsx, maxits);
+            alglib::minbleicoptimize(state, function1_grad, NULL, &data );
+            alglib::minbleicresults(state, alg_x, rep);
+
+            if ( opt.debug ) {
+                printf("%d\n", int(rep.terminationtype)); // EXPECTED: 4
+                printf("%s\n", alg_x.tostring(20).c_str());
+            }
+
+            cl_4 = composite_LogLikelihood( data.base, data.errRateV, alg_x );
+            if ( opt.debug ) cout << "cl_4: " << setprecision(20) << cl_4 << endl;
+        }
+        catch ( alglib::ap_error &e ) {
+            cerr << "catch error: " << e.msg << " at seq[" << new_s << "] qua[" << new_q << "]" << endl;
+        }
+
+        string st = "ACGT";
+        map<char, double> mBaseFrac;
+        for ( int i(0); i != 4; i++ ) {
+            mBaseFrac[ st[i] ] = alg_x[i];
+        }
+
+        for ( auto &p : ntPF ) {
+            ntPF[ p.first ].push_back( mBaseFrac[p.first] );
+        }
+
+        return ntPF;
+    }
+    else if ( ntPF.size() > 4 ) {
+        cerr << "ntPF contain unknown base" << endl, exit(1);
+    }
+    else {
+        return ntPF;
+    }
 }
 
 
