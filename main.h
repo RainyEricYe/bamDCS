@@ -384,8 +384,8 @@ void sscs(mStrBrV &watsonFam,
             trimEnd( wcBrV[0], opt );
             trimEnd( wcBrV[1], opt );
         }
-        writer.WriteRecord( wcBrV[0] );
-        writer.WriteRecord( wcBrV[1] );
+       // writer.WriteRecord( wcBrV[0] );
+        //writer.WriteRecord( wcBrV[1] );
     }
 
     // more than one pairs of reads, calculate pvalue + PCR error
