@@ -127,6 +127,8 @@ pDoubleCharSet maxLogLikelihood(const string &, const vector<double> &, const ve
 double minus_llh_3nt( int m, double x[], const vector<pCharUlong> &v, const string &s, const vector<double> &e,  double lower[], double upper[], double sumBound );
 double calculate_llh(const string &, const vector<double> &, mCharDouble &);
 string ignoreError(const string &, const vector< mCvD > &);
+string ignoreError2(const string &s, const vector< mCvD > &v);
+
 void trimEnd(SeqLib::BamRecord &br, const Option &opt);
 //SeqLib::Cigar trimCigar(SeqLib::BamRecord &br, const SeqLib::Cigar &cg, const Option &opt);
 size_t getGenomePosition(size_t pos, ulong i, const Cigar &cg);
@@ -934,7 +936,7 @@ vString consensusSeq(const BamRecordVector &wcBrV,
         }
         else { // - strand
             seq += br.Sequence();
-            mSeqN_wc[ ignoreError(seq, wcHetPos) ]++;
+            mSeqN_wc[ ignoreError2(seq, wcHetPos) ]++;
         }
     }
 
@@ -972,6 +974,24 @@ string ignoreError(const string &s, const vector< mCvD > &v)
             else {
                 seq += "N";
             }
+        }
+    }
+    return seq;
+}
+
+string ignoreError2(const string &s, const vector< mCvD > &v)
+{
+    string seq("");
+    for ( size_t i(0); i != s.size(); i++ ) {
+
+        if ( v[i].empty() ) {
+            seq += "N";
+        }
+        else if ( v[i].size() == 1 ) {
+            seq += v[i].begin()->first;
+        }
+        else {
+            seq += "N";
         }
     }
     return seq;
