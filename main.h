@@ -110,7 +110,7 @@ void printConsensusRead(ogzstream &,ogzstream &,mStrBrV &,mStrBrV &,const string
 void sscs(mStrBrV &,mStrBrV &,const string &,const Option &,const string &, SeqLib::BamWriter &);
 void addPcrError( vector< mCvD > &wcHetPos, const Option &opt);
 
-string getQuaFromPvalue( const vector< mCvD > &quaV, const string &s, const Option &opt );
+string getQuaFromPvalue( const vector< mCvD > &quaV, const string &s, double &frac, const Option &opt );
 string adjust_p(const string &qs, const Option &opt);
 
 //vCharSet hetPoint(const BamRecordVector &, const Option &);
@@ -305,9 +305,10 @@ void printConsensusRead(
     if ( seqV.empty() ) return;
 
     for ( size_t i(0); i != seqV.size(); i++ ) {
+        double frac(0.0);
         string seq = seqV[i];
         size_t length = seq.size()/2;
-        string quaStr = getQuaFromPvalue( sameHetPos, seq, opt );
+        string quaStr = getQuaFromPvalue( sameHetPos, seq, frac, opt );
 
         string id1 = Qname + _itoa(i) + "/1";
         string id2 = Qname + _itoa(i) + "/2";
@@ -355,8 +356,10 @@ void printConsensusRead(
             br1.AddZTag("RG", "foo");
             br2.AddZTag("RG", "foo");
 
-            br1.AddZTag("fr", "0.01");
-            br2.SmartAddTag("Fr", "0.001");
+            if ( frac > 0 ) {
+                br1.AddZTag("fr", to_string(frac));
+                br2.AddZTag("fr", to_string(frac));
+            }
 
             writer.WriteRecord( br1 );
             writer.WriteRecord( br2 );
@@ -406,9 +409,10 @@ void sscs(mStrBrV &watsonFam,
     if ( seqV.empty() ) return;
 
     for ( size_t i(0); i != seqV.size(); i++ ) {
+        double frac(0.0);
         string seq = seqV[i];
         size_t length = seq.size()/2;
-        string quaStr = getQuaFromPvalue( wcHetPos, seq, opt );
+        string quaStr = getQuaFromPvalue( wcHetPos, seq, frac, opt );
 
         string id1 = Qname + _itoa(i) + "/1";
         string id2 = Qname + _itoa(i) + "/2";
@@ -441,6 +445,11 @@ void sscs(mStrBrV &watsonFam,
 
             br1.AddZTag("RG", "foo");
             br2.AddZTag("RG", "foo");
+
+            if (frac > 0) {
+                br1.AddZTag("fr", to_string(frac));
+                br2.AddZTag("fr", to_string(frac));
+            }
 
             writer.WriteRecord( br1 );
             writer.WriteRecord( br2 );
@@ -505,9 +514,11 @@ void addPcrError( vector< mCvD > &wcHetPos, const Option &opt)
     return;
 }
 
-string getQuaFromPvalue( const vector< mCvD > &quaV, const string &s, const Option &opt )
+string getQuaFromPvalue( const vector< mCvD > &quaV, const string &s, double &frac, const Option &opt )
 {
     ostringstream q("");
+    int cnt(0);
+    frac = 0.0;
 
     for ( size_t i(0); i != s.size(); i++ ) {
 
@@ -519,6 +530,8 @@ string getQuaFromPvalue( const vector< mCvD > &quaV, const string &s, const Opti
 
             if ( it != quaV[i].end() ) {
                 double f = -10.0 * log( it->second.at(0) )/log(10.0);
+                cnt++;
+                frac += it->second.at(1);
 
        //         if ( f > 41.0 ) f = 41.0;
          //       if ( f < 0.0  ) f = 0.0;
@@ -530,6 +543,8 @@ string getQuaFromPvalue( const vector< mCvD > &quaV, const string &s, const Opti
 
         }
     }
+
+    if (cnt > 0) frac /= cnt;
 
     return q.str();
 }
