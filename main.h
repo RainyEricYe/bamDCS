@@ -355,6 +355,9 @@ void printConsensusRead(
             br1.AddZTag("RG", "foo");
             br2.AddZTag("RG", "foo");
 
+            br1.AddZTag("fr", "0.01");
+            br2.SmartAddTag("Fr", "0.001");
+
             writer.WriteRecord( br1 );
             writer.WriteRecord( br2 );
         }
