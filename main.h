@@ -361,6 +361,11 @@ void printConsensusRead(
                 br2.AddZTag("fr", to_string(frac));
             }
 
+            if ( seqV.size() > 1 ) {
+                br1.AddZTag("sp", to_string(i));
+                br2.AddZTag("sp", to_string(i));
+            }
+
             writer.WriteRecord( br1 );
             writer.WriteRecord( br2 );
         }
@@ -445,12 +450,12 @@ void sscs(mStrBrV &watsonFam,
 
             br1.AddZTag("RG", "foo");
             br2.AddZTag("RG", "foo");
-
+/*
             if (frac > 0) {
                 br1.AddZTag("fr", to_string(frac));
                 br2.AddZTag("fr", to_string(frac));
             }
-
+*/
             writer.WriteRecord( br1 );
             writer.WriteRecord( br2 );
         }
@@ -530,11 +535,13 @@ string getQuaFromPvalue( const vector< mCvD > &quaV, const string &s, double &fr
 
             if ( it != quaV[i].end() ) {
                 double f = -10.0 * log( it->second.at(0) )/log(10.0);
-                cnt++;
-                frac += it->second.at(1);
-
-       //         if ( f > 41.0 ) f = 41.0;
-         //       if ( f < 0.0  ) f = 0.0;
+                /*
+                if ( it->second.at(1) < 1 ) {
+                    cnt++;
+                    frac += it->second.at(1);
+      //              cout << "cnt_frac: " << cnt << ' ' << it->second.at(1) << endl;
+                }
+*/
                 q << (char)( opt.phredOffset + int(f) );
             }
             else {
@@ -545,6 +552,7 @@ string getQuaFromPvalue( const vector< mCvD > &quaV, const string &s, double &fr
     }
 
     if (cnt > 0) frac /= cnt;
+    //cout << "ave_frac: " << frac << endl;
 
     return q.str();
 }
@@ -567,6 +575,8 @@ vector< mCvD > zipHetPoint(const vector< mCvD > &w, const vector< mCvD > &c, con
                 if ( ci->second.at(0) > opt.pvalue ) continue;
 
                 nt[ wi->first ].push_back( wi->second.at(0) + ci->second.at(0) - wi->second.at(0) * ci->second.at(0) + 10 * pow(opt.pcrError,2) );
+                cout << wi->second.at(1) << ' ' << ci->second.at(1) << ' ' << (wi->second.at(1) + ci->second.at(1)) / 2 << endl;
+
                 nt[ wi->first ].push_back( (wi->second.at(1) + ci->second.at(1)) / 2);
             }
         }
