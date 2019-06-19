@@ -11,7 +11,7 @@ int main( int argc, char **argv )
     srand (time(NULL));
     int c;
     Option opt;
-    while ( (c=getopt(argc,argv,"q:Q:s:S:N:f:e:g:x:t:o:C:p:n:cdvh")) != -1 ) {
+    while ( (c=getopt(argc,argv,"q:Q:s:S:N:f:e:g:x:t:o:C:p:n:cbdvh")) != -1 ) {
         switch (c) {
             case 'q': opt.baseQuaCutoff = atoi(optarg);               break;
             case 'Q': opt.mapQuaCutoff  = atoi(optarg);               break;
@@ -33,6 +33,7 @@ int main( int argc, char **argv )
             case 'p': opt.pcrError = atof(optarg);                    break;
             case 'n': opt.randNread = atoi(optarg);                   break;
 
+            case 'b': opt.sscsOut = true;                             break;
             case 'd': opt.debug = true;                               break;
             case 'v': cerr << VERSION << endl;                        exit(1);
             case 'h':
@@ -147,7 +148,8 @@ int main( int argc, char **argv )
                     if ( testCigarFam(watsonFam, crickFam, cg, opt) ) { // DCS
                         printConsensusRead(outFQ1, outFQ2, watsonFam, crickFam, cg, opt, chrBegEnd, writer );
                     }
-                    else if (  w->second.size() <= opt.maxSupOnEachStrand * 2
+                    else if (  opt.sscsOut
+                            && w->second.size() <= opt.maxSupOnEachStrand * 2
                             && c->second.size() <= opt.maxSupOnEachStrand * 2 ) {
                         sscs(watsonFam, crickFam, cg, opt, chrBegEnd, writer);
                     }
@@ -155,14 +157,14 @@ int main( int argc, char **argv )
                         continue; // Fam is too big
                     }
                 }
-                else if ( w->second.size() <= opt.maxSupOnEachStrand * 2 ) {
+                else if ( opt.sscsOut && w->second.size() <= opt.maxSupOnEachStrand * 2 ) {
                     sscs(watsonFam, crickFam, cg, opt, chrBegEnd, writer);
                 }
                 else {
                     continue; // Fam is too big
                 }
             }
-            else if ( c != crickFam.end() ) {
+            else if ( opt.sscsOut && c != crickFam.end() ) {
                 if ( c->second.size() <= opt.maxSupOnEachStrand * 2 ) {
                     sscs(watsonFam, crickFam, cg, opt, chrBegEnd, writer);
                 }

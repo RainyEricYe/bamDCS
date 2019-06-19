@@ -48,6 +48,7 @@ class Option {
             minSupOnHaplotype(3),
             filtSoftClip(false),
             outBamFile(""),
+            sscsOut(false),
             debug(false),
             pvalue(0.001),
             pcrError(1.0e-5),
@@ -70,6 +71,7 @@ class Option {
         ulong minSupOnHaplotype;
         bool filtSoftClip;
         string outBamFile;
+        bool sscsOut;
         bool debug;
         double pvalue;
         double pcrError;
@@ -155,6 +157,7 @@ void usage() {
         "    -n [i]     N read pairs to be randomly selected and used [0, total]\n"
 
         "    -o [s]     output bam File directly []\n"
+        "    -b         output SSCS [false]\n"
         "    -d         debug mode [false]\n"
         "    -h         help\n"
         "    -v         version\n"
@@ -279,7 +282,6 @@ void printConsensusRead(
     // length of read1 & read2 are same, So connect them to simplify workflow
 
     // 0-based index of heterozygous point --> vector of allele set
-//    vCharSet wHetPos, cHetPos, sameHetPos;
     vector< mCvD > wHetPos, cHetPos, sameHetPos;
 
     // find heterzygous point on each fam
@@ -375,6 +377,7 @@ void sscs(mStrBrV &watsonFam,
     }
 
     // only one pair of reads, output directly
+    /*
     if ( wcBrV.size() == 2 && opt.outBamFile.size() > 0 ) {
         return;
         if ( opt.softEndTrim > 0 ) {
@@ -384,6 +387,7 @@ void sscs(mStrBrV &watsonFam,
        // writer.WriteRecord( wcBrV[0] );
         //writer.WriteRecord( wcBrV[1] );
     }
+*/
 
     // more than one pairs of reads, calculate pvalue + PCR error
     wcHetPos = hetPoint(wcBrV, opt);
@@ -484,7 +488,6 @@ vector< mCvD > hetPoint(const BamRecordVector &brV, const Option &opt)
             qual += quaV[i][j];
         }
 
-//        string adj_qua = adjust_p(qual, opt);
         pt.push_back( llh_genotype(base, qual, opt) );
     }
 
@@ -655,7 +658,6 @@ map<string, long> consensusSeq(const BamRecordVector &wcBrV,
                     && countN( it->first.substr(len,len) ) > opt.Ncutoff * len
                )  continue;
 
-            //seqV.push_back( it->first );
             mSeqN[ it->first ] = it->second;
         }
     }
@@ -812,23 +814,6 @@ void trimEnd(SeqLib::BamRecord &br, const Option &opt)
         vrc.push_back( rc[0] );
         for ( size_t i(2); i < rc.size(); i++ ) vrc.push_back( rc[i] );
     }
-    /*
-    else if ( rc[1].Type() == 'M' && rc[1].Length() <= 5 ) { // short M near end
-        if ( rc[2].Type() == 'I' ) {
-            CigarField tf('S', rc[0].Length() + rc[1].Length() + rc[2].Length() );
-            vrc.push_back(tf);
-            for ( size_t i(3); i < rc.size(); i++ ) vrc.push_back( rc[i] );
-        }
-        else if ( rc[2].Type() == 'D' || rc[2].Type() == 'N' ) {
-            CigarField tf('S', rc[0].Length() + rc[1].Length() );
-            vrc.push_back(tf);
-            for ( size_t i(3); i < rc.size(); i++ ) vrc.push_back( rc[i] );
-        }
-        else {
-            for ( auto &p : rc ) vrc.push_back(p);
-        }
-    }
-    */
     else {
         for ( auto &p : rc ) vrc.push_back(p);
     }
@@ -847,25 +832,6 @@ void trimEnd(SeqLib::BamRecord &br, const Option &opt)
         rv.push_back( vrc[0] );
         for ( size_t i(2); i < vrc.size(); i++ ) rv.push_back( vrc[i] );
     }
-    /*
-    else if ( vrc[1].Type() == 'M' && vrc[1].Length() <= 5 ) { // short M near end
-        if ( vrc[2].Type() == 'I' ) {
-
-            CigarField tf('S', vrc[0].Length() + vrc[1].Length() + vrc[2].Length() );
-            rv.push_back(tf);
-            for ( size_t i(3); i < vrc.size(); i++ ) rv.push_back( vrc[i] );
-        }
-        else if ( vrc[2].Type() == 'D' || vrc[2].Type() == 'N' ) {
-
-            CigarField tf('S', vrc[0].Length() + vrc[1].Length() );
-            rv.push_back(tf);
-            for ( size_t i(3); i < vrc.size(); i++ ) rv.push_back( vrc[i] );
-        }
-        else {
-            for ( auto &p : vrc ) rv.push_back(p);
-        }
-    }
-    */
     else {
         for ( auto &p : vrc ) rv.push_back(p);
     }
@@ -1252,8 +1218,5 @@ map<char, vector<double> > llh_genotype(const string &s, const string &q, const 
         return ntPF;
     }
 }
-
-
-
 
 #endif // MAIN_H_
