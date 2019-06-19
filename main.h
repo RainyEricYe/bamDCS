@@ -110,7 +110,7 @@ void printConsensusRead(ogzstream &,ogzstream &,mStrBrV &,mStrBrV &,const string
 void sscs(mStrBrV &,mStrBrV &,const string &,const Option &,const string &, SeqLib::BamWriter &);
 void addPcrError( vector< mCvD > &wcHetPos, const Option &opt);
 
-string getQuaFromPvalue( const vector< mCvD > &quaV, const string &s, double &frac, const Option &opt );
+string getQuaFromPvalue( const vector< mCvD > &quaV, const string &s, const Option &opt );
 string adjust_p(const string &qs, const Option &opt);
 
 //vCharSet hetPoint(const BamRecordVector &, const Option &);
@@ -118,8 +118,8 @@ vector< mCvD > hetPoint(const BamRecordVector &, const Option &);
 
 //vCharSet zipHetPoint(const vCharSet &, const vCharSet &);
 vector< mCvD > zipHetPoint(const vector< mCvD > &, const vector< mCvD > &, const Option &opt);
-vString consensusSeq(const BamRecordVector &, const BamRecordVector &, const vector< mCvD > &, const Option &);
-vString consensusSeq(const BamRecordVector &wcBrV, const vector< mCvD > &wcHetPos, const Option &opt);
+map<string, long> consensusSeq(const BamRecordVector &, const BamRecordVector &, const vector< mCvD > &, const Option &);
+map<string, long> consensusSeq(const BamRecordVector &wcBrV, const vector< mCvD > &wcHetPos, const Option &opt);
 
 mCvD  llh_genotype(const string &, const string &, const Option &);
 
@@ -297,21 +297,24 @@ void printConsensusRead(
     sameHetPos = zipHetPoint(wHetPos, cHetPos, opt);
 
     // watson & crick should be concordant on hom point. if not, set N
-    vString seqV = consensusSeq(watsonFam[cg], crickFam[cg], sameHetPos, opt);
+    map<string, long> mSeqN = consensusSeq(watsonFam[cg], crickFam[cg], sameHetPos, opt);
 
     string Qname("@");
     Qname += chrBegEnd + ":" + cg + ":";
 
-    if ( seqV.empty() ) return;
+    if ( mSeqN.empty() ) return;
 
-    for ( size_t i(0); i != seqV.size(); i++ ) {
-        double frac(0.0);
-        string seq = seqV[i];
+    double dcsN(0.0);
+    for ( auto p : mSeqN ) dcsN += (double)p.second;
+
+    int i(0);
+    for ( auto p : mSeqN ) {
+        i++;
+        string seq = p.first;
+        double frac( p.second/dcsN );
+
         size_t length = seq.size()/2;
-        string quaStr = getQuaFromPvalue( sameHetPos, seq, frac, opt );
-
-        string id1 = Qname + _itoa(i) + "/1";
-        string id2 = Qname + _itoa(i) + "/2";
+        string quaStr = getQuaFromPvalue( sameHetPos, seq, opt );
 
         string rd1 = seq.substr( 0, length );
         string rd2 = reverseComplement( seq.substr(length) );
@@ -321,24 +324,11 @@ void printConsensusRead(
 
         reverse( quaStr2.begin(), quaStr2.end() );
 
-        /*
-        for ( size_t j(0); j != length; j++ ) {
-            quaStr1 += ( rd1[j] == 'N' ? '$' : 'J' );
-            quaStr2 += ( rd2[j] == 'N' ? '$' : 'J' );
-        }
-*/
-//   fq1 << id1 << "\n" << rd1 << "\n+\n" << quaStr1 << endl;
-  //      fq2 << id2 << "\n" << rd2 << "\n+\n" << quaStr2 << endl;
-
         if ( opt.outBamFile.size() > 0 ) {
             SeqLib::BamRecord br1 = watsonFam[cg].at(0);
             SeqLib::BamRecord br2 = watsonFam[cg].at(1);
 
-//            br1.SetQname( chrBegEnd + ":" + cg );
-//            br2.SetQname( chrBegEnd + ":" + cg );
             if ( opt.softEndTrim > 0 ) {
-     //           br1.SetCigar( trimCigar(br1, br1.GetCigar(), opt) );
-       //         br2.SetCigar( trimCigar(br2, br2.GetCigar(), opt) );
                 trimEnd(br1, opt);
                 trimEnd(br2, opt);
             }
@@ -361,7 +351,7 @@ void printConsensusRead(
                 br2.AddZTag("fr", to_string(frac));
             }
 
-            if ( seqV.size() > 1 ) {
+            if ( mSeqN.size() > 1 ) {
                 br1.AddZTag("sp", to_string(i));
                 br2.AddZTag("sp", to_string(i));
             }
@@ -406,21 +396,22 @@ void sscs(mStrBrV &watsonFam,
     wcHetPos = hetPoint(wcBrV, opt);
     addPcrError(wcHetPos, opt);
 
-    vString seqV = consensusSeq(wcBrV, wcHetPos, opt);
+    map<string, long> mSeqN = consensusSeq(wcBrV, wcHetPos, opt);
 
     string Qname("@");
     Qname += chrBegEnd + ":" + cg + ":";
 
-    if ( seqV.empty() ) return;
+    if ( mSeqN.empty() ) return;
 
-    for ( size_t i(0); i != seqV.size(); i++ ) {
-        double frac(0.0);
-        string seq = seqV[i];
+    double dcsN(0);
+    for ( auto p : mSeqN ) dcsN += (double)p.second;
+
+    for ( auto p : mSeqN ) {
+        string seq = p.first;
+        double frac( p.second/dcsN );
+
         size_t length = seq.size()/2;
-        string quaStr = getQuaFromPvalue( wcHetPos, seq, frac, opt );
-
-        string id1 = Qname + _itoa(i) + "/1";
-        string id2 = Qname + _itoa(i) + "/2";
+        string quaStr = getQuaFromPvalue( wcHetPos, seq, opt );
 
         string rd1 = seq.substr( 0, length );
         string rd2 = reverseComplement( seq.substr(length) );
@@ -450,12 +441,12 @@ void sscs(mStrBrV &watsonFam,
 
             br1.AddZTag("RG", "foo");
             br2.AddZTag("RG", "foo");
-/*
+
             if (frac > 0) {
                 br1.AddZTag("fr", to_string(frac));
                 br2.AddZTag("fr", to_string(frac));
             }
-*/
+
             writer.WriteRecord( br1 );
             writer.WriteRecord( br2 );
         }
@@ -519,11 +510,9 @@ void addPcrError( vector< mCvD > &wcHetPos, const Option &opt)
     return;
 }
 
-string getQuaFromPvalue( const vector< mCvD > &quaV, const string &s, double &frac, const Option &opt )
+string getQuaFromPvalue( const vector< mCvD > &quaV, const string &s, const Option &opt )
 {
     ostringstream q("");
-    int cnt(0);
-    frac = 0.0;
 
     for ( size_t i(0); i != s.size(); i++ ) {
 
@@ -535,13 +524,6 @@ string getQuaFromPvalue( const vector< mCvD > &quaV, const string &s, double &fr
 
             if ( it != quaV[i].end() ) {
                 double f = -10.0 * log( it->second.at(0) )/log(10.0);
-                /*
-                if ( it->second.at(1) < 1 ) {
-                    cnt++;
-                    frac += it->second.at(1);
-      //              cout << "cnt_frac: " << cnt << ' ' << it->second.at(1) << endl;
-                }
-*/
                 q << (char)( opt.phredOffset + int(f) );
             }
             else {
@@ -550,9 +532,6 @@ string getQuaFromPvalue( const vector< mCvD > &quaV, const string &s, double &fr
 
         }
     }
-
-    if (cnt > 0) frac /= cnt;
-    //cout << "ave_frac: " << frac << endl;
 
     return q.str();
 }
@@ -575,7 +554,6 @@ vector< mCvD > zipHetPoint(const vector< mCvD > &w, const vector< mCvD > &c, con
                 if ( ci->second.at(0) > opt.pvalue ) continue;
 
                 nt[ wi->first ].push_back( wi->second.at(0) + ci->second.at(0) - wi->second.at(0) * ci->second.at(0) + 10 * pow(opt.pcrError,2) );
-                cout << wi->second.at(1) << ' ' << ci->second.at(1) << ' ' << (wi->second.at(1) + ci->second.at(1)) / 2 << endl;
 
                 nt[ wi->first ].push_back( (wi->second.at(1) + ci->second.at(1)) / 2);
             }
@@ -879,10 +857,10 @@ double minus_llh_3nt( int m, double x[], const vector<pCharUlong> &v, const stri
     return -llh;
 }
 
-vString consensusSeq(const BamRecordVector &w, const BamRecordVector &c, const vector< mCvD > &sameHetPos, const Option &opt)
+map<string, long> consensusSeq(const BamRecordVector &w, const BamRecordVector &c, const vector< mCvD > &sameHetPos, const Option &opt)
 {
-    vString seqV;
-    if ( sameHetPos.empty() ) return seqV;
+    map<string, long> mSeqN;
+    if ( sameHetPos.empty() ) return mSeqN;
 
     mStrUlong mSeqN_w, mSeqN_c;
     string seq("");
@@ -895,7 +873,7 @@ vString consensusSeq(const BamRecordVector &w, const BamRecordVector &c, const v
     }
 
     if ( Ncnt > sameHetPos.size() * opt.Ncutoff )
-        return seqV;
+        return mSeqN;
 
     // get potential seq based on original read and heterozygous site
     for ( auto &br : w ) {
@@ -929,20 +907,21 @@ vString consensusSeq(const BamRecordVector &w, const BamRecordVector &c, const v
             mStrUlong::iterator ct = mSeqN_c.find( it->first );
 
             if (   ct != mSeqN_c.end() && ct->second >= opt.minSupOnHaplotype )
-                seqV.push_back( it->first );
+                //seqV.push_back( it->first );
+                mSeqN[ it->first ] = it->second + ct->second;
         }
     }
 
-    return seqV;
+    return mSeqN;
 }
 
 // for sscs
-vString consensusSeq(const BamRecordVector &wcBrV,
+map<string, long> consensusSeq(const BamRecordVector &wcBrV,
         const vector< mCvD > &wcHetPos,
         const Option &opt )
 {
-    vString seqV;
-    if ( wcHetPos.empty() ) return seqV;
+    map<string, long> mSeqN;
+    if ( wcHetPos.empty() ) return mSeqN;
 
     mStrUlong mSeqN_wc;
     string seq("");
@@ -955,7 +934,7 @@ vString consensusSeq(const BamRecordVector &wcBrV,
     }
 
     if ( Ncnt > wcHetPos.size() * opt.Ncutoff )
-        return seqV;
+        return mSeqN;
 
     // get potential seq based on original read and heterozygous site
     for ( auto &br : wcBrV ) {
@@ -975,11 +954,12 @@ vString consensusSeq(const BamRecordVector &wcBrV,
                     && countN( it->first.substr(len,len) ) > opt.Ncutoff * len
                )  continue;
 
-            seqV.push_back( it->first );
+            //seqV.push_back( it->first );
+            mSeqN[ it->first ] = it->second;
         }
     }
 
-    return seqV;
+    return mSeqN;
 }
 
 string ignoreError(const string &s, const vector< mCvD > &v)
