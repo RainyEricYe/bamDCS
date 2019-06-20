@@ -11,7 +11,7 @@ int main( int argc, char **argv )
     srand (time(NULL));
     int c;
     Option opt;
-    while ( (c=getopt(argc,argv,"q:Q:s:S:N:f:e:g:x:t:o:C:p:n:cbdvh")) != -1 ) {
+    while ( (c=getopt(argc,argv,"q:Q:s:S:N:f:e:g:x:t:o:C:p:n:cabdvh")) != -1 ) {
         switch (c) {
             case 'q': opt.baseQuaCutoff = atoi(optarg);               break;
             case 'Q': opt.mapQuaCutoff  = atoi(optarg);               break;
@@ -33,6 +33,7 @@ int main( int argc, char **argv )
             case 'p': opt.pcrError = atof(optarg);                    break;
             case 'n': opt.randNread = atoi(optarg);                   break;
 
+            case 'a': opt.singleOut = true;                           break;
             case 'b': opt.sscsOut = true;                             break;
             case 'd': opt.debug = true;                               break;
             case 'v': cerr << VERSION << endl;                        exit(1);
@@ -40,6 +41,8 @@ int main( int argc, char **argv )
             default:  usage();                                        exit(1);
         }
     }
+
+    if ( opt.singleOut ) opt.sscsOut = true;
 
     if ( argc < optind + 2 ) usage(), exit(1);
 

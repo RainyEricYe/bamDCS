@@ -49,6 +49,7 @@ class Option {
             filtSoftClip(false),
             outBamFile(""),
             sscsOut(false),
+            singleOut(false),
             debug(false),
             pvalue(0.001),
             pcrError(1.0e-5),
@@ -72,6 +73,7 @@ class Option {
         bool filtSoftClip;
         string outBamFile;
         bool sscsOut;
+        bool singleOut;
         bool debug;
         double pvalue;
         double pcrError;
@@ -157,6 +159,7 @@ void usage() {
         "    -n [i]     N read pairs to be randomly selected and used [0, total]\n"
 
         "    -o [s]     output bam File directly []\n"
+        "    -a         output single pair-end reads [false]\n"
         "    -b         output SSCS [false]\n"
         "    -d         debug mode [false]\n"
         "    -h         help\n"
@@ -377,17 +380,16 @@ void sscs(mStrBrV &watsonFam,
     }
 
     // only one pair of reads, output directly
-    /*
-    if ( wcBrV.size() == 2 && opt.outBamFile.size() > 0 ) {
-        return;
+    if ( opt.singleOut && wcBrV.size() == 2 && opt.outBamFile.size() > 0 ) {
         if ( opt.softEndTrim > 0 ) {
             trimEnd( wcBrV[0], opt );
             trimEnd( wcBrV[1], opt );
         }
-       // writer.WriteRecord( wcBrV[0] );
-        //writer.WriteRecord( wcBrV[1] );
+
+        writer.WriteRecord( wcBrV[0] );
+        writer.WriteRecord( wcBrV[1] );
+        return;
     }
-*/
 
     // more than one pairs of reads, calculate pvalue + PCR error
     wcHetPos = hetPoint(wcBrV, opt);
