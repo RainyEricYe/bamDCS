@@ -369,14 +369,17 @@ void sscs(mStrBrV &watsonFam,
 {
     vector< mCvD > wcHetPos;
     BamRecordVector wcBrV;
+    size_t w_size(0), c_size(0);
 
     // wcBrV contain br from both Fam
     for ( auto &br : watsonFam[cg] ) {
         wcBrV.push_back(br);
+        w_size++;
     }
 
     for ( auto &br : crickFam[cg] ) {
         wcBrV.push_back(br);
+        c_size++;
     }
 
     // only one pair of reads, output directly
@@ -388,6 +391,15 @@ void sscs(mStrBrV &watsonFam,
 
         writer.WriteRecord( wcBrV[0] );
         writer.WriteRecord( wcBrV[1] );
+        return;
+    }
+
+    // skip sscs if there is indel and not supported by both strands
+    size_t insIt = cg.find('I');
+    size_t delIt = cg.find('D');
+    if (   ( insIt != string::npos or delIt != string::npos )
+        && ( w_size == 0 or c_size == 0 )
+       ) {
         return;
     }
 
@@ -613,7 +625,6 @@ map<string, long> consensusSeq(const BamRecordVector &w, const BamRecordVector &
             mStrUlong::iterator ct = mSeqN_c.find( it->first );
 
             if (   ct != mSeqN_c.end() && ct->second >= opt.minSupOnHaplotype )
-                //seqV.push_back( it->first );
                 mSeqN[ it->first ] = it->second + ct->second;
         }
     }
@@ -649,7 +660,7 @@ map<string, long> consensusSeq(const BamRecordVector &wcBrV,
         }
         else { // - strand
             seq += br.Sequence();
-            mSeqN_wc[ ignoreError2(seq, wcHetPos) ]++;
+            mSeqN_wc[ ignoreError(seq, wcHetPos) ]++;
         }
     }
 
