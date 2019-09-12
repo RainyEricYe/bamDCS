@@ -2,9 +2,10 @@
 bamDCS is a software which generates double strand consensus reads for low-frequency mutation. The input files are from bamRdf.
 
 # Preparation
-htslib(https://github.com/samtools/htslib)
-SeqLib(https://github.com/walaj/SeqLib)
-alglib(http://www.alglib.net/translator/re/alglib-3.15.0.cpp.gpl.tgz)
+
+* htslib(https://github.com/samtools/htslib)
+- SeqLib(https://github.com/walaj/SeqLib)
+* alglib(http://www.alglib.net/translator/re/alglib-3.15.0.cpp.gpl.tgz)
 
 # Install
     wget https://github.com/RainyEricYe/bamDCS.git
