@@ -1,7 +1,7 @@
 # Introduction
 bamDCS is a software which generates double strand consensus reads for low-frequency mutation. The input files are from bamRdf.
 
-# preparation
+# Preparation
 htslib(https://github.com/samtools/htslib)
 SeqLib(https://github.com/walaj/SeqLib)
 alglib(http://www.alglib.net/translator/re/alglib-3.15.0.cpp.gpl.tgz)
@@ -12,6 +12,10 @@ alglib(http://www.alglib.net/translator/re/alglib-3.15.0.cpp.gpl.tgz)
     vi Makefile && change filepath of libs
     make
 
+# Citation
+    Rui Ye et al. LFMD: detecting low-frequency mutations in genome sequencing data without molecular tags.
+    https://www.biorxiv.org/content/10.1101/617381v9
+    
 # Usage
     Program: bamDCS  (generate double strand consensus reads for low-frequency mutation)
     Version: v2.4
