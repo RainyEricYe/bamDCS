@@ -1188,7 +1188,7 @@ map<char, vector<double> > llh_genotype(const string &s, const string &q, const 
 
         string AFstr = initAlleleFreq(fr, depth, except_bs);
         alglib::real_1d_array alg_x = AFstr.c_str();
-
+/*
         try {
             string upBnd = _upBoundary(except_bs);
             alglib::real_1d_array bndu = upBnd.c_str();
@@ -1211,7 +1211,7 @@ map<char, vector<double> > llh_genotype(const string &s, const string &q, const 
         catch ( alglib::ap_error &e ) {
             cerr << "catch error: " << e.msg << " at seq[" << new_s << "] qua[" << new_q << "]" << endl;
         }
-
+*/
         string st = "ACGT";
         map<char, double> mBaseFrac;
         for ( int i(0); i != 4; i++ ) {
