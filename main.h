@@ -1087,6 +1087,55 @@ map<char, vector<double> > llh_genotype(const string &s, const string &q, const 
 
     if ( depth == 0 ) return ntPF;
 
+
+    // quick return if equal or less then one allele
+    if ( fr.empty() ) {
+        return ntPF;
+    }
+
+    // sort by frequent
+    vector<pair<char, ulong> > ntV( fr.begin(), fr.end() );
+
+    // only one allele
+    if ( ntV.size() == 1 ) {
+        if ( ntV[0].second >= opt.minSupOnEachStrand ) {
+            ntPF[ ntV[0].first ].push_back(0.0);
+            ntPF[ ntV[0].first ].push_back(1.0);
+        }
+
+        return ntPF;
+    }
+
+    if ( ntV.size() > 1 )
+        sort( ntV.begin(), ntV.end(), _cmpBySecond ); // descending sort
+
+    // delete pair<allele, supportNum> which has too few support reads or too small fraction
+    while ( ntV.size() ) {
+        if ( ntV.back().second < opt.minSupOnEachStrand || ntV.back().second / depth < opt.minFractionInFam )
+            ntV.pop_back();
+        else
+            break;
+    }
+
+    // none allele remain
+    if ( ntV.empty() ) {
+        return ntPF;
+    }
+
+    // only one allele
+    if ( ntV.size() == 1 ) {
+        if ( ntV[0].second >= opt.minSupOnEachStrand ) {
+            ntPF[ ntV[0].first ].push_back(0.0);
+            ntPF[ ntV[0].first ].push_back(1.0);
+        }
+
+        return ntPF;
+    }
+
+
+
+
+    // more than one allele
     fn_data data;
     data.base = new_s;
     data.errRateV = errV;

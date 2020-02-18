@@ -13,6 +13,10 @@ bamDCS is a software which generates double strand consensus reads for low-frequ
     vi Makefile && change filepath of libs
     make
 
+    if errors occur, try
+    conda activate lfmd
+    make
+
 # Citation
     Rui Ye et al. LFMD: detecting low-frequency mutations in genome sequencing data without molecular tags.
     https://www.biorxiv.org/content/10.1101/617381v9
