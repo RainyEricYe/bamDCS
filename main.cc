@@ -173,7 +173,7 @@ int main( int argc, char **argv )
                 }
             }
             else {
-                cerr << "weird cigar: " << cg << endl;
+                continue;
             }
         }
     }

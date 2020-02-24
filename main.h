@@ -1087,7 +1087,6 @@ map<char, vector<double> > llh_genotype(const string &s, const string &q, const 
 
     if ( depth == 0 ) return ntPF;
 
-
     // quick return if equal or less then one allele
     if ( fr.empty() ) {
         return ntPF;
@@ -1134,7 +1133,6 @@ map<char, vector<double> > llh_genotype(const string &s, const string &q, const 
 
 
 
-
     // more than one allele
     fn_data data;
     data.base = new_s;
@@ -1143,7 +1141,7 @@ map<char, vector<double> > llh_genotype(const string &s, const string &q, const 
     // var for alglib
     alglib::minbleicstate state;
     alglib::minbleicreport rep;
-    double epsg(0.000001);
+    double epsg(0.0001);
     double epsf(0.0);
     double epsx(0.0);
     alglib::ae_int_t maxits(0);
