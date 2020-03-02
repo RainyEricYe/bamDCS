@@ -334,6 +334,9 @@ void printConsensusRead(
             br1.SetSequence( rd1 );
             br2.SetSequence( seq.substr(length) );
 
+            if ( br1.Position() < 1 || br2.Position() < 1 )
+                continue;
+
             reverse( quaStr2.begin(), quaStr2.end() );
             br1.SetQualities( quaStr1, 33 );
             br2.SetQualities( quaStr2, 33 );
