@@ -350,6 +350,11 @@ void printConsensusRead(
             if ( frac > 0 ) {
                 br1.AddZTag("fr", to_string(frac));
                 br2.AddZTag("fr", to_string(frac));
+
+                ostringstream famSize;
+                famSize << watsonFam[cg].size() << "," << crickFam[cg].size();
+                br1.AddZTag("fs", famSize.str() );
+                br2.AddZTag("fs", famSize.str() );
             }
 
             if ( mSeqN.size() > 1 ) {
