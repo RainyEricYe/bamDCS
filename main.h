@@ -362,6 +362,16 @@ void printConsensusRead(
                 br2.AddZTag("sp", to_string(i));
             }
 
+			if ( br1.GetCigar().NumQueryConsumed() != br1.Length() ) {
+				cerr << "WARN: cigar and seq length differ for " << br1 << endl;
+				continue;
+			}
+
+			if ( br2.GetCigar().NumQueryConsumed() != br2.Length() ) {
+				cerr << "WARN: cigar and seq length differ for " << br2 << endl;
+				continue;
+			}
+
 			try {
 				writer.WriteRecord( br1 );
 				writer.WriteRecord( br2 );
