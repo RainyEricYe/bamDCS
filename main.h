@@ -397,20 +397,25 @@ void sscs(mStrBrV &watsonFam,
             trimEnd( wcBrV[1], opt );
         }
 
-        writer.WriteRecord( wcBrV[0] );
-        writer.WriteRecord( wcBrV[1] );
-        return;
-    }
+		ostringstream famSize;
+		famSize << w_size << "," << c_size;
+		wcBrV[0].AddZTag("fs", famSize.str() );
+		wcBrV[1].AddZTag("fs", famSize.str() );
 
-    // skip sscs if there is indel and not supported by both strands
-    size_t insIt = cg.find('I');
+		writer.WriteRecord( wcBrV[0] );
+		writer.WriteRecord( wcBrV[1] );
+		return;
+	}
+/*
+	// skip sscs if there is indel and not supported by both strands
+	size_t insIt = cg.find('I');
     size_t delIt = cg.find('D');
     if (   ( insIt != string::npos or delIt != string::npos )
         && ( w_size == 0 or c_size == 0 )
        ) {
         return;
     }
-
+*/
     // more than one pairs of reads, calculate pvalue + PCR error
     wcHetPos = hetPoint(wcBrV, opt);
     addPcrError(wcHetPos, opt);
@@ -425,7 +430,9 @@ void sscs(mStrBrV &watsonFam,
     double dcsN(0);
     for ( auto p : mSeqN ) dcsN += (double)p.second;
 
+	int i(0);
     for ( auto p : mSeqN ) {
+		i++;
         string seq = p.first;
         double frac( p.second/dcsN );
 
@@ -464,6 +471,17 @@ void sscs(mStrBrV &watsonFam,
             if (frac > 0) {
                 br1.AddZTag("fr", to_string(frac));
                 br2.AddZTag("fr", to_string(frac));
+
+                ostringstream famSize;
+                famSize << w_size << "," << c_size;
+                br1.AddZTag("fs", famSize.str() );
+                br2.AddZTag("fs", famSize.str() );
+
+            }
+
+            if ( mSeqN.size() > 1 ) {
+                br1.AddZTag("sp", to_string(i));
+                br2.AddZTag("sp", to_string(i));
             }
 
             writer.WriteRecord( br1 );
