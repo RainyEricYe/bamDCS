@@ -362,8 +362,13 @@ void printConsensusRead(
                 br2.AddZTag("sp", to_string(i));
             }
 
-            writer.WriteRecord( br1 );
-            writer.WriteRecord( br2 );
+			try {
+				writer.WriteRecord( br1 );
+				writer.WriteRecord( br2 );
+			}
+			catch ( std::runtime_error &e ) {
+				cerr << "WARN: WriteRecord error, skip\n" << br1 << "\n" << br2 << endl;
+			}
         }
     }
 }
