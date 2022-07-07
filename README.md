@@ -8,7 +8,7 @@ bamDCS is a software which generates double strand consensus reads for low-frequ
 * alglib(http://www.alglib.net/translator/re/alglib-3.15.0.cpp.gpl.tgz)
 
 # Install
-    wget https://github.com/RainyEricYe/bamDCS.git
+    git clone https://github.com/RainyEricYe/bamDCS.git
     cd bamDCS
     vi Makefile && change filepath of libs
     make
